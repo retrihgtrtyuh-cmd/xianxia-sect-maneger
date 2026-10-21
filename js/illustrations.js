@@ -53,10 +53,18 @@
         '<div class="banner-overlay"></div>' +
         '<div class="banner-caption">' +
           '<span class="font-semibold">' +
-            (isLv2 ? 'Обитель II ступени: Твердыня Глубин' : 'Обитель I ступени: Забытая Нора') +
+            (window.SectGame.i18n
+              ? window.SectGame.i18n.t(isLv2 ? 'bannerAbodeLv2Title' : 'bannerAbodeLv1Title')
+              : isLv2
+              ? 'Обитель II ступени: Твердыня Глубин'
+              : 'Обитель I ступени: Забытая Нора') +
           '</span>' +
           '<span class="text-muted">' +
-            (isLv2 ? 'Отдых +10 здоровья/тик · Опыт +35%' : 'Отдых +4 здоровья/тик · Потолок I царства') +
+            (window.SectGame.i18n
+              ? window.SectGame.i18n.t(isLv2 ? 'bannerAbodeLv2Sub' : 'bannerAbodeLv1Sub')
+              : isLv2
+              ? 'Отдых +10 здоровья/тик · Опыт +35%'
+              : 'Отдых +4 здоровья/тик · Потолок I царства') +
           '</span>' +
         '</div>' +
       '</div>'
@@ -94,8 +102,16 @@
         '</svg>' +
         '<div class="banner-overlay"></div>' +
         '<div class="banner-caption">' +
-          '<span>Карстовый Разлом · Ярус глубины ' + depthStage + '</span>' +
-          '<span class="text-muted">Авангард принимает 80% атак</span>' +
+          '<span>' +
+            (window.SectGame.i18n
+              ? window.SectGame.i18n.t('bannerRiftTitle', { stage: depthStage })
+              : 'Карстовый Разлом · Ярус глубины ' + depthStage) +
+          '</span>' +
+          '<span class="text-muted">' +
+            (window.SectGame.i18n
+              ? window.SectGame.i18n.t('bannerRiftSub')
+              : 'Авангард принимает 80% атак') +
+          '</span>' +
         '</div>' +
       '</div>'
     );

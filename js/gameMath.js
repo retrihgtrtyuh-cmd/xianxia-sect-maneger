@@ -602,6 +602,9 @@
    * Строго без раскрытия числовых значений.
    */
   function getDaoHeartLabel(daoHeart) {
+    if (window.SectGame && window.SectGame.i18n) {
+      return window.SectGame.i18n.getDaoHeartLabel(daoHeart);
+    }
     const rawVal =
       daoHeart && typeof daoHeart === 'object'
         ? typeof daoHeart.daoHeart === 'number' && !isNaN(daoHeart.daoHeart)
@@ -636,13 +639,20 @@
         : 0;
     const val = Math.max(-100, Math.min(100, Math.round(rawVal)));
     const label = getDaoHeartLabel(val);
+    const i18n = window.SectGame && window.SectGame.i18n;
+    const sub = function (id, fallback) {
+      return i18n ? i18n.t('daoSub_' + id) : fallback;
+    };
 
     if (val >= 80) {
       return {
         id: 'DIAMOND_HEART',
         name: label,
         colorClass: 'text-amber',
-        subtitle: 'Высшая ясность духа: «Второе дыхание» в бою, защита от одержимости и благословение при Прорыве',
+        subtitle: sub(
+          'DIAMOND_HEART',
+          'Высшая ясность духа: «Второе дыхание» в бою, защита от одержимости и благословение при Прорыве'
+        ),
         breakthroughBonus: 15,
         secondWind: true,
         bodyPossessionImmune: true,
@@ -657,9 +667,12 @@
     if (val >= 50) {
       return {
         id: 'FEARLESS_BEFORE_HEAVENS',
-        name: 'Бесстрашие перед Небесами',
+        name: label,
         colorClass: 'text-cyan',
-        subtitle: 'Просветлённый взор: усилено усвоение целебных пилюль, ускорен набор боевой Ци и укреплён Прорыв',
+        subtitle: sub(
+          'FEARLESS_BEFORE_HEAVENS',
+          'Просветлённый взор: усилено усвоение целебных пилюль, ускорен набор боевой Ци и укреплён Прорыв'
+        ),
         breakthroughBonus: 10,
         secondWind: false,
         bodyPossessionImmune: false,
@@ -674,9 +687,12 @@
     if (val >= 20) {
       return {
         id: 'UNWAVERING_SPIRIT',
-        name: 'Непоколебимый дух',
+        name: label,
         colorClass: 'text-cyan',
-        subtitle: 'Твёрдость воли: подавление страха в бою и повышенная устойчивость при Прорыве',
+        subtitle: sub(
+          'UNWAVERING_SPIRIT',
+          'Твёрдость воли: подавление страха в бою и повышенная устойчивость при Прорыве'
+        ),
         breakthroughBonus: 5,
         secondWind: false,
         bodyPossessionImmune: false,
@@ -691,9 +707,12 @@
     if (val >= -19) {
       return {
         id: 'MORTAL_CONFUSION',
-        name: 'Смятение смертного',
+        name: label,
         colorClass: 'text-muted',
-        subtitle: 'Равновесие мирских страстей и стремления к Дао',
+        subtitle: sub(
+          'MORTAL_CONFUSION',
+          'Равновесие мирских страстей и стремления к Дао'
+        ),
         breakthroughBonus: 0,
         secondWind: false,
         bodyPossessionImmune: false,
@@ -708,9 +727,12 @@
     if (val >= -49) {
       return {
         id: 'SHADOW_OF_DOUBT',
-        name: 'Тень Сомнения',
+        name: label,
         colorClass: 'text-demonic',
-        subtitle: 'Ярость в ударах в обмен на тревогу духа при возвышении царства',
+        subtitle: sub(
+          'SHADOW_OF_DOUBT',
+          'Ярость в ударах в обмен на тревогу духа при возвышении царства'
+        ),
         breakthroughBonus: -5,
         secondWind: false,
         bodyPossessionImmune: false,
@@ -725,9 +747,12 @@
     if (val >= -79) {
       return {
         id: 'DEMONIC_OBSESSION',
-        name: 'Одержимость (Дьявольский путь)',
+        name: label,
         colorClass: 'text-rose',
-        subtitle: 'Кровавая жажда: свирепый урон и вампиризм, но риск поглощения жизненной силы соратников в бою',
+        subtitle: sub(
+          'DEMONIC_OBSESSION',
+          'Кровавая жажда: свирепый урон и вампиризм, но риск поглощения жизненной силы соратников в бою'
+        ),
         breakthroughBonus: -10,
         secondWind: false,
         bodyPossessionImmune: false,
@@ -741,9 +766,12 @@
     }
     return {
       id: 'TRUE_HEART_DEMON',
-      name: 'Истинный Демон Сердца',
+      name: label,
       colorClass: 'text-rose',
-      subtitle: 'Бездна Дьявольского пути: сокрушительная мощь, вампиризм и хищное поглощение Ци',
+      subtitle: sub(
+        'TRUE_HEART_DEMON',
+        'Бездна Дьявольского пути: сокрушительная мощь, вампиризм и хищное поглощение Ци'
+      ),
       breakthroughBonus: -15,
       secondWind: false,
       bodyPossessionImmune: false,
@@ -1204,6 +1232,14 @@
   }
 
   function getRealmLabel(tier, subLevel) {
+    const i18n = window.SectGame && window.SectGame.i18n;
+    if (i18n) {
+      const tierName = i18n.t(tier === 1 ? 'realmTier1' : 'realmTier2');
+      const suffix = i18n.t(subLevel === 5 ? 'subLevelPeak' : 'subLevelNormal', {
+        sub: subLevel,
+      });
+      return tierName + ' · ' + suffix;
+    }
     const tierName = tier === 1 ? 'Закалка Тела (I)' : 'Возведение Основы (II)';
     const suffix = subLevel === 5 ? subLevel + '-я ступень (Пик)' : subLevel + '-я ступень';
     return tierName + ' · ' + suffix;

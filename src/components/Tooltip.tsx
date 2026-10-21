@@ -1,19 +1,20 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ARCHETYPE_INFO } from '../engine/gameMath';
 import { ArchetypeId } from '../types/game';
+import { t, getLocalizedDaoHeartLabel } from '../i18n';
 
 export function formatArchetypeBonusText(archKey: ArchetypeId): string {
   const info = ARCHETYPE_INFO[archKey] || ARCHETYPE_INFO.NOVICE;
   const b = info.statBonuses || {};
   const parts: string[] = [];
-  if (b.maxHp) parts.push(`+${b.maxHp} к Здоровью`);
-  if (b.pAtk) parts.push(`+${b.pAtk} к Физ. атаке`);
-  if (b.mAtk) parts.push(`+${b.mAtk} к Маг. атаке`);
-  if (b.pDef) parts.push(`+${b.pDef} к Физ. защите`);
-  if (b.mDef) parts.push(`+${b.mDef} к Маг. защите`);
-  if (b.spd) parts.push(`+${b.spd} к Скорости`);
-  if (b.crit) parts.push(`+${b.crit}% к Шансу крита`);
-  if (b.eva) parts.push(`+${b.eva}% к Уклонению`);
+  if (b.maxHp) parts.push(`+${b.maxHp} ${t('statHp', null) || 'к Здоровью'}`);
+  if (b.pAtk) parts.push(`+${b.pAtk} ${t('statPAtk')}`);
+  if (b.mAtk) parts.push(`+${b.mAtk} ${t('statMAtk')}`);
+  if (b.pDef) parts.push(`+${b.pDef} ${t('statPDef')}`);
+  if (b.mDef) parts.push(`+${b.mDef} ${t('statMDef')}`);
+  if (b.spd) parts.push(`+${b.spd} ${t('statSpd')}`);
+  if (b.crit) parts.push(`+${b.crit}% ${t('statCrit')}`);
+  if (b.eva) parts.push(`+${b.eva}% ${t('statEva')}`);
   if (parts.length === 0) {
     return 'Базовые параметры 1-го царства (Закалка Тела). При прорыве во 2-е царство открывается выбор боевой специализации.';
   }
@@ -30,34 +31,15 @@ export function formatArchetypeTooltip(archKey: ArchetypeId): string {
 }
 
 export function getDaoHeartLabel(daoHeart: number | boolean): string {
-  if (typeof daoHeart === 'boolean') {
-    return daoHeart ? 'Алмазное Сердце Дао' : 'Смятение смертного';
-  }
-  const val = Math.max(-100, Math.min(100, Math.round(Number(daoHeart) || 0)));
-  if (val >= 80) return 'Алмазное Сердце Дао';
-  if (val >= 50) return 'Бесстрашие перед Небесами';
-  if (val >= 20) return 'Непоколебимый дух';
-  if (val >= -19) return 'Смятение смертного';
-  if (val >= -49) return 'Тень Сомнения';
-  if (val >= -79) return 'Одержимость (Дьявольский путь)';
-  return 'Истинный Демон Сердца';
+  return getLocalizedDaoHeartLabel(daoHeart);
 }
 
 export function formatDaoHeartTooltip(daoHeart: number | boolean, subtitle?: string): string {
   const label = getDaoHeartLabel(daoHeart);
   const subLine = subtitle ? `${subtitle}\n\n` : '\n';
-  return (
-    `Текущая ступень духа: «${label}».\n` +
-    subLine +
-    'Ступени Весов Сердца Дао:\n' +
-    '• Алмазное Сердце — ускоряет постижение Ци, укрепляет защиту и оберегает от искажения при прорыве.\n' +
-    '• Чистый Разум — гармоничное равновесие духа без штрафов.\n' +
-    '• Смятение — внутренние сомнения ослабляют защиту и мешают прорыву.\n' +
-    '• Одержимость — яростный напор в атаке ценой снижения защиты.\n' +
-    '• Истинный Демон — пробуждение Дьявольского пути: сокрушительная мощь в ущерб защите.\n\n' +
-    'Победы, прорывы и отдых ведут к Свету Небес; гибель соратников и ранения на грани смерти ведут к Бездне Демона.'
-  );
+  return `${t('daoTooltipHeader', { label })}\n${subLine}${t('daoTooltipBody')}`;
 }
+
 
 export const TOOLTIP_LINGER_MS = 600;
 

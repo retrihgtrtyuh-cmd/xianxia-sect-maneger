@@ -22,6 +22,7 @@ import {
   Pause,
   Play,
   RotateCcw,
+  Settings,
   Shield,
   Skull,
   Sparkles,
@@ -31,6 +32,7 @@ import {
   VolumeX,
   Zap,
 } from 'lucide-react';
+import { t, getLang, setLang, LanguageCode } from './i18n';
 import {
   ArchetypeId,
   ChronicleCategory,
@@ -160,6 +162,13 @@ export default function App() {
 
   const [soundMuted, setSoundMuted] = useState<boolean>(false);
   const [chronicleFilter, setChronicleFilter] = useState<'ALL' | ChronicleCategory>('ALL');
+  const [lang, setLangState] = useState<LanguageCode>(() => getLang());
+  const [settingsModalOpen, setSettingsModalOpen] = useState<boolean>(false);
+
+  const handleLanguageChange = (nextLang: LanguageCode) => {
+    const applied = setLang(nextLang);
+    setLangState(applied);
+  };
 
   // Модуль 03: Уровень Обители (1 = Забытая Нора, 2 = Твердыня Глубин)
   const [sectLevel, setSectLevel] = useState<1 | 2>(saved.current?.sectLevel ?? 1);
@@ -1377,18 +1386,20 @@ export default function App() {
           }}
           className="text-lg sm:text-xl font-bold tracking-tight text-[#F3EFE6] font-display whitespace-nowrap shrink-0"
         >
-          Обитель Бессмертных
+          {t('brandTitle')}
         </a>
 
         {/* Зона 2: Разгруженная панель — только Духовные камни и быстрый переход на Склад */}
         <div className="flex items-center gap-2 sm:gap-3 text-xs font-mono tabular-nums text-[#CBD5E1]">
           <div
-            data-tooltip-title="Духовные камни Секты"
-            data-tooltip="Основная валюта Обители для возвышения павильонов, алхимии и ковки."
+            data-tooltip-title={t('stonesTooltipTitle')}
+            data-tooltip={t('stonesTooltip')}
             className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#131926] border border-[#222B3B] whitespace-nowrap"
           >
             <Gem className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-            <span className="text-[#94A3B8] font-sans text-[11px] hidden sm:inline">Камни:</span>
+            <span className="text-[#94A3B8] font-sans text-[11px] hidden sm:inline">
+              {t('stonesShort')}
+            </span>
             <strong className="text-amber-400">{resources.spiritStones}</strong>
           </div>
 
@@ -1397,8 +1408,8 @@ export default function App() {
               setActiveTab('ABODE');
               setAbodeSubTab('INVENTORY');
             }}
-            data-tooltip-title="Складской Инвентарь"
-            data-tooltip="Открыть хранилище ресурсов, эликсиров, пилюль потенциала и снаряжения Секты."
+            data-tooltip-title={t('inventoryTooltipTitle')}
+            data-tooltip={t('inventoryTooltip')}
             className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-sans transition-colors whitespace-nowrap ${
               activeTab === 'ABODE' && abodeSubTab === 'INVENTORY'
                 ? 'bg-amber-500/20 border-amber-500/60 text-amber-300 font-semibold'
@@ -1406,26 +1417,38 @@ export default function App() {
             }`}
           >
             <Package className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-            <span>Инвентарь</span>
+            <span>{t('inventoryBtn')}</span>
           </button>
         </div>
 
-        {/* Зона 3: Сервисные действия */}
+        {/* Зона 3: Сервисные действия и Настройки языка */}
         <div className="flex items-center gap-1.5 shrink-0">
+          <button
+            onClick={() => setSettingsModalOpen(true)}
+            data-tooltip-title={t('settingsTooltipTitle')}
+            data-tooltip={t('settingsTooltip')}
+            className="px-2.5 py-1.5 text-xs text-[#E2E8F0] bg-[#161E2E] hover:bg-[#222D42] border border-[#242E42] rounded-lg transition-colors flex items-center gap-1.5"
+          >
+            <Settings className="w-3.5 h-3.5 text-amber-400" />
+            <span className="hidden sm:inline">{t('settingsBtn')}</span>
+            <span className="text-[10px] font-mono uppercase px-1 rounded bg-amber-500/20 text-amber-300">
+              {lang.toUpperCase()}
+            </span>
+          </button>
           <button
             onClick={() => {
               soundFX.muted = !soundMuted;
               setSoundMuted(!soundMuted);
             }}
             className="p-2 text-xs text-[#CBD5E1] bg-[#161E2E] hover:bg-[#222D42] rounded-lg transition-colors"
-            title={soundMuted ? 'Включить звук' : 'Выключить звук'}
+            title={soundMuted ? t('soundOnBtn') : t('soundOffBtn')}
           >
             {soundMuted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
           </button>
           <button
             onClick={resetAlphaState}
             className="p-2 text-xs text-[#94A3B8] hover:text-white bg-[#161E2E] hover:bg-[#222D42] rounded-lg transition-colors"
-            title="Сбросить прогресс"
+            title={t('resetTooltipTitle')}
           >
             <RotateCcw className="w-3.5 h-3.5" />
           </button>
@@ -1434,7 +1457,7 @@ export default function App() {
             className="px-2.5 py-1.5 text-[11px] font-semibold text-[#0B0E14] bg-amber-500 rounded-lg hover:bg-amber-400 transition-colors whitespace-nowrap flex items-center gap-1"
           >
             <Download className="w-3 h-3" />
-            <span className="hidden sm:inline">HTML</span>
+            <span className="hidden sm:inline">{t('exportHtmlBtn')}</span>
           </button>
         </div>
       </header>
@@ -1453,7 +1476,7 @@ export default function App() {
                   : 'text-[#94A3B8] hover:text-white bg-[#161D2B]'
               }`}
             >
-              Обитель и Чайная
+              {t('subSanctuary')}
             </button>
             <button
               onClick={() => setAbodeSubTab('ROSTER')}
@@ -1463,7 +1486,8 @@ export default function App() {
                   : 'text-[#94A3B8] hover:text-white bg-[#161D2B]'
               }`}
             >
-              Состав ({disciples.length}){anyReadyBreakthrough ? ' · Прорыв!' : ''}
+              {t('subRoster', { count: disciples.length })}
+              {anyReadyBreakthrough ? t('subRosterBreakthrough') : ''}
             </button>
             <button
               onClick={() => setAbodeSubTab('STATS')}
@@ -1473,7 +1497,7 @@ export default function App() {
                   : 'text-[#94A3B8] hover:text-white bg-[#161D2B]'
               }`}
             >
-              Характеристики
+              {t('subStats')}
             </button>
             <button
               onClick={() => setAbodeSubTab('PILLS_GEAR')}
@@ -1483,7 +1507,7 @@ export default function App() {
                   : 'text-[#94A3B8] hover:text-white bg-[#161D2B]'
               }`}
             >
-              Пилюли и Доспехи
+              {t('subPillsGear')}
             </button>
             <button
               onClick={() => setAbodeSubTab('INVENTORY')}
@@ -1494,7 +1518,7 @@ export default function App() {
               }`}
             >
               <Package className="w-3.5 h-3.5" />
-              <span>Инвентарь</span>
+              <span>{t('subInventory')}</span>
             </button>
           </div>
         )}
@@ -1509,7 +1533,7 @@ export default function App() {
                   : 'text-[#94A3B8] hover:text-white bg-[#161D2B]'
               }`}
             >
-              Поле Боя (Ярус {expedition.depthStage})
+              {t('subArena', { stage: expedition.depthStage })}
             </button>
             <button
               onClick={() => setExpeditionSubTab('LINEUP')}
@@ -1519,7 +1543,7 @@ export default function App() {
                   : 'text-[#94A3B8] hover:text-white bg-[#161D2B]'
               }`}
             >
-              Строй и Лечение
+              {t('subLineup')}
             </button>
             <button
               onClick={() => setExpeditionSubTab('LOG')}
@@ -1529,7 +1553,7 @@ export default function App() {
                   : 'text-[#94A3B8] hover:text-white bg-[#161D2B]'
               }`}
             >
-              Журнал Похода
+              {t('subLog')}
             </button>
           </div>
         )}
@@ -1544,7 +1568,7 @@ export default function App() {
                   : 'text-[#94A3B8] hover:text-white bg-[#161D2B]'
               }`}
             >
-              Алхимик: Эликсиры
+              {t('subElixirs')}
             </button>
             <button
               onClick={() => setCraftsSubTab('POTENTIAL')}
@@ -1554,7 +1578,7 @@ export default function App() {
                   : 'text-[#94A3B8] hover:text-white bg-[#161D2B]'
               }`}
             >
-              Алхимик: Потенциал (6 видов)
+              {t('subPotential')}
             </button>
             <button
               onClick={() => setCraftsSubTab('FORGE')}
@@ -1564,7 +1588,7 @@ export default function App() {
                   : 'text-[#94A3B8] hover:text-white bg-[#161D2B]'
               }`}
             >
-              Кузня и Арсенал ({warehouseGear.length})
+              {t('subForge', { count: warehouseGear.length })}
             </button>
           </div>
         )}
@@ -1579,7 +1603,7 @@ export default function App() {
                   : 'text-[#94A3B8] hover:text-white bg-[#161D2B]'
               }`}
             >
-              Летопись Событий ({chronicle.length})
+              {t('subEvents', { count: chronicle.length })}
             </button>
             <button
               onClick={() => setChronicleSubTab('MEMORIAL')}
@@ -1589,7 +1613,7 @@ export default function App() {
                   : 'text-[#94A3B8] hover:text-white bg-[#161D2B]'
               }`}
             >
-              Зал Предков ({fallenMemorial.length})
+              {t('subMemorial', { count: fallenMemorial.length })}
             </button>
           </div>
         )}
@@ -1604,7 +1628,10 @@ export default function App() {
               }}
               className="px-2.5 py-1 rounded-lg bg-rose-950/60 border border-rose-500/40 text-rose-300 font-mono text-[11px]"
             >
-              Бой: Ярус {expedition.depthStage} · В.{expedition.waveInStage}/3
+              {t('statusCombatBtn', {
+                stage: expedition.depthStage,
+                wave: expedition.waveInStage,
+              })}
             </button>
           )}
           {lootBufferTotal > 0 && (
@@ -1612,7 +1639,7 @@ export default function App() {
               onClick={claimLootBuffer}
               className="px-2.5 py-1 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-300 font-mono text-[11px] hover:bg-amber-500/30"
             >
-              Забрать буфер (+{lootBufferTotal})
+              {t('claimBufferBtn', { count: lootBufferTotal })}
             </button>
           )}
         </div>
@@ -1638,23 +1665,21 @@ export default function App() {
                     <div className="space-y-1.5">
                       <div className="flex items-center justify-between">
                         <h2 className="text-base font-bold text-[#F3EFE6]">
-                          Возвышение Обители
+                          {t('abodeUpgradeTitle')}
                         </h2>
                         <span className="text-xs text-amber-400 font-mono">
-                          Ступень {sectLevel}/2
+                          {t('abodeTierBadge', { level: sectLevel })}
                         </span>
                       </div>
                       <p className="text-xs text-[#94A3B8] leading-snug">
-                        {sectLevel === 1
-                          ? '«Забытая Нора»: разреженная Ци режет опыт на пике I царства (-50%) и снижает шанс возвышения во II царство (-35%).'
-                          : '«Твердыня Глубин»: источник Инь-Ци открыт! Сняты штрафы среды, опыт +35%, лечение 10 ед./тик.'}
+                        {sectLevel === 1 ? t('abodeDescLv1') : t('abodeDescLv2')}
                       </p>
                     </div>
 
                     {sectLevel === 1 && SECT_LEVELS[1].upgradeCost ? (
                       <div className="pt-2 border-t border-[#1E2636] space-y-2">
                         <div className="text-[11px] text-[#CBD5E1] font-mono tabular-nums">
-                          Цена: 80 камн. · 18 жел. · 18 мха · 12 панц.
+                          {t('abodeUpgradeCostText')}
                         </div>
                         <button
                           onClick={handleUpgradeSectLevel}
@@ -1665,12 +1690,12 @@ export default function App() {
                               : 'bg-[#1A2232] text-[#64748B] cursor-not-allowed'
                           }`}
                         >
-                          Возвысить до «Твердыни Глубин»
+                          {t('abodeUpgradeBtn')}
                         </button>
                       </div>
                     ) : (
                       <div className="pt-2 border-t border-[#1E2636] text-xs text-emerald-400 font-medium">
-                        Обитель достигла максимальной II ступени Альфы.
+                        {t('abodeMaxLevelReached')}
                       </div>
                     )}
                   </section>
@@ -1679,15 +1704,17 @@ export default function App() {
                   <section className="bg-[#121722] border border-[#222B3B] rounded-xl p-3.5 flex flex-col justify-between">
                     <div className="space-y-1.5">
                       <div className="flex items-center justify-between">
-                        <h2 className="text-base font-bold text-[#F3EFE6]">Чайный Павильон</h2>
+                        <h2 className="text-base font-bold text-[#F3EFE6]">
+                          {t('teaPavilionTitle')}
+                        </h2>
                         <span className="text-xs text-[#94A3B8]">
                           {freeRecruitsLeft > 0
-                            ? `Бесплатно: ${freeRecruitsLeft}`
-                            : `${RECRUIT_COST} камней`}
+                            ? t('freeRecruitsBadge', { count: freeRecruitsLeft })
+                            : t('stoneCostBadge', { cost: RECRUIT_COST })}
                         </span>
                       </div>
                       <p className="text-xs text-[#94A3B8] leading-snug">
-                        Приём послушников со случайным Корнем, Конституцией, Характером и сеткой пилюль.
+                        {t('teaPavilionDesc')}
                       </p>
                     </div>
 
@@ -1704,8 +1731,8 @@ export default function App() {
                         <UserPlus className="w-3.5 h-3.5" />
                         <span>
                           {freeRecruitsLeft > 0
-                            ? 'Принять первого послушника (Бесплатно)'
-                            : `Принять послушника (${RECRUIT_COST} камней)`}
+                            ? t('recruitFirstFreeBtn')
+                            : t('recruitPaidBtn', { cost: RECRUIT_COST })}
                         </span>
                       </button>
 
@@ -1723,10 +1750,10 @@ export default function App() {
                         <Sparkles className="w-3.5 h-3.5" />
                         <span>
                           {rewardedAdTimer !== null
-                            ? `Нисхождение Дара Небес: ${rewardedAdTimer} сек...`
+                            ? t('heavensGraceTimerBtn', { sec: rewardedAdTimer })
                             : isSoftlocked
-                            ? 'Воззвать к Милости Небес (призвать адепта)'
-                            : 'Милость Небес (резерв при потере всех адептов)'}
+                            ? t('heavensGraceActiveBtn')
+                            : t('heavensGraceReserveBtn')}
                         </span>
                       </button>
                     </div>
@@ -1736,13 +1763,15 @@ export default function App() {
                 {/* Нижняя компактная полоса походного строя и быстрого старта */}
                 <section className="bg-[#121722] border border-[#222B3B] rounded-xl p-3 flex flex-wrap items-center justify-between gap-2.5 shrink-0">
                   <div className="flex items-center gap-2 overflow-x-auto">
-                    <span className="text-xs font-semibold text-[#F3EFE6] shrink-0">Строй:</span>
+                    <span className="text-xs font-semibold text-[#F3EFE6] shrink-0">
+                      {t('lineupStripLabel')}
+                    </span>
                     {squadInSlots.map((m, idx) => (
                       <span
                         key={idx}
                         className="px-2 py-1 rounded bg-[#0D1119] border border-[#1B2331] text-[11px] text-[#CBD5E1] whitespace-nowrap"
                       >
-                        {idx + 1}: {m ? m.name : 'Пусто'}
+                        {idx + 1}: {m ? m.name : t('slotEmpty')}
                       </span>
                     ))}
                   </div>
@@ -1752,7 +1781,7 @@ export default function App() {
                       onClick={() => setAbodeSubTab('ROSTER')}
                       className="px-3 py-1.5 rounded-lg text-xs font-medium bg-[#1A2232] text-[#CBD5E1] hover:bg-[#232D42]"
                     >
-                      К списку ({disciples.length})
+                      {t('toRosterBtn', { count: disciples.length })}
                     </button>
                     <button
                       onClick={() => {
@@ -1765,7 +1794,7 @@ export default function App() {
                       className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600 text-white hover:bg-emerald-500 flex items-center gap-1.5"
                     >
                       <Swords className="w-3.5 h-3.5" />
-                      <span>{expedition.active ? 'В Разлом' : 'В поход'}</span>
+                      <span>{expedition.active ? t('toRiftBtn') : t('startMarchShortBtn')}</span>
                     </button>
                   </div>
                 </section>
@@ -1778,31 +1807,29 @@ export default function App() {
                 <div className="flex items-center justify-between shrink-0">
                   <div>
                     <h2 className="text-base font-bold text-[#F3EFE6]">
-                      Адепты Секты ({disciples.length})
+                      {t('rosterTitle', { count: disciples.length })}
                     </h2>
-                    <p className="text-xs text-[#94A3B8]">
-                      Нажмите на ученика для выбора или откройте его Характеристики / Пилюли.
-                    </p>
+                    <p className="text-xs text-[#94A3B8]">{t('rosterSubtitle')}</p>
                   </div>
                   <button
                     onClick={() => handleRecruitDisciple(false)}
                     disabled={freeRecruitsLeft <= 0 && resources.spiritStones < RECRUIT_COST}
                     className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-amber-500 text-[#0B0E14] hover:bg-amber-400 disabled:bg-[#1A2232] disabled:text-[#64748B]"
                   >
-                    + Нанять ({freeRecruitsLeft > 0 ? 'Бесплатно' : `${RECRUIT_COST} камн.`})
+                    {freeRecruitsLeft > 0
+                      ? t('recruitShortFreeBtn')
+                      : t('recruitShortPaidBtn', { cost: RECRUIT_COST })}
                   </button>
                 </div>
 
                 {disciples.length === 0 ? (
                   <div className="flex-1 flex flex-col items-center justify-center bg-[#121722] border border-[#222B3B] rounded-xl p-6 text-center gap-3">
-                    <p className="text-xs text-[#94A3B8]">
-                      В секте пока нет учеников. Примите первого послушника в Чайном павильоне.
-                    </p>
+                    <p className="text-xs text-[#94A3B8]">{t('emptyRosterText')}</p>
                     <button
                       onClick={() => setAbodeSubTab('SANCTUARY')}
                       className="px-4 py-2 rounded-lg text-xs font-semibold bg-amber-500 text-[#0B0E14]"
                     >
-                      Перейти в Чайный павильон
+                      {t('gotoTeaPavilionBtn')}
                     </button>
                   </div>
                 ) : (
@@ -1831,38 +1858,43 @@ export default function App() {
                                 {unit.name}
                               </span>
                               <span className="text-[11px] text-[#94A3B8] font-mono shrink-0">
-                                {unit.lineupSlot !== null ? `Поз. ${unit.lineupSlot + 1}` : 'Резерв'} ·{' '}
-                                {unit.status === 'EXPEDITION' ? 'В бою' : 'Отдых'}
+                                {unit.lineupSlot !== null
+                                  ? t('posPrefix', { pos: unit.lineupSlot + 1 })
+                                  : t('reserveLabel')}{' '}
+                                ·{' '}
+                                {unit.status === 'EXPEDITION'
+                                  ? t('statusInExpedition')
+                                  : t('statusResting')}
                               </span>
                             </div>
                             <div className="text-[11px] text-[#94A3B8] mt-0.5 truncate">
                               <span
                                 className="has-tooltip"
-                                data-tooltip-title={`Боевой Путь: ${ARCHETYPE_INFO[unit.archetype].name}`}
+                                data-tooltip-title={`${t('combatPathPrefix')}${ARCHETYPE_INFO[unit.archetype].name}`}
                                 data-tooltip={formatArchetypeTooltip(unit.archetype)}
                               >
                                 {ARCHETYPE_INFO[unit.archetype].name}
                               </span>{' '}
-                              · {unit.gender === 'YANG' ? 'Ян' : 'Инь'} ·{' '}
+                              · {unit.gender === 'YANG' ? t('genderYang') : t('genderYin')} ·{' '}
                               <span
                                 className="has-tooltip"
-                                data-tooltip-title={`Характер: ${TEMPERAMENT_INFO[unit.temperament].name}`}
+                                data-tooltip-title={`${t('temperamentPrefix')}${TEMPERAMENT_INFO[unit.temperament].name}`}
                                 data-tooltip={TEMPERAMENT_INFO[unit.temperament].summary}
                               >
                                 {TEMPERAMENT_INFO[unit.temperament].name}
                               </span>{' '}
-                              · Ступень {unit.subLevel}/5
+                              · {t('stageShort', { sub: unit.subLevel })}
                             </div>
                           </div>
 
-                          <div
+                           <div
                             className="p-2 rounded-lg bg-[#0D1119] border border-[#1B2331] my-1.5 space-y-1"
-                            data-tooltip-title={`Сердце Дао: ${daoLabel}`}
+                            data-tooltip-title={`${t('daoHeartLabel')} ${daoLabel}`}
                             data-tooltip={formatDaoHeartTooltip(unit.daoHeart, daoState.subtitle)}
                           >
                             <div className="flex items-center justify-between text-[11px]">
                               <span className="text-[#94A3B8] font-semibold has-tooltip">
-                                Сердце Дао:
+                                {t('daoHeartLabel')}
                               </span>
                               <strong className={daoState.colorClass}>{daoLabel}</strong>
                             </div>
@@ -1874,16 +1906,16 @@ export default function App() {
                               />
                             </div>
                             <div className="flex items-center justify-between text-[10px] text-[#94A3B8]">
-                              <span className="text-rose-400">Бездна Демона</span>
-                              <span>Равновесие</span>
-                              <span className="text-amber-400">Свет Небес</span>
+                              <span className="text-rose-400">{t('daoScaleAbyss')}</span>
+                              <span>{t('daoScaleBalance')}</span>
+                              <span className="text-amber-400">{t('daoScaleLight')}</span>
                             </div>
                           </div>
 
                           <div className="grid grid-cols-2 gap-2.5 my-1.5 text-[11px] font-mono tabular-nums">
                             <div>
                               <div className="flex justify-between text-[#CBD5E1]">
-                                <span>Здоровье</span>
+                                <span>{t('hpLabel')}</span>
                                 <span>
                                   {eff.hp}/{eff.maxHp}
                                 </span>
@@ -1905,7 +1937,7 @@ export default function App() {
 
                             <div>
                               <div className="flex justify-between text-[#CBD5E1]">
-                                <span>Опыт Ци</span>
+                                <span>{t('expLabel')}</span>
                                 <span>
                                   {unit.exp}/{unit.maxExp}
                                 </span>
@@ -1926,7 +1958,10 @@ export default function App() {
 
                           <div className="flex items-center justify-between gap-2 pt-1.5 border-t border-[#1E2636] text-[11px]">
                             <span className="font-mono text-[#94A3B8]">
-                              Мошна: {unit.personalStones} · Травмы: {unit.injuries}/5
+                              {t('purseAndInjuriesSummary', {
+                                stones: unit.personalStones,
+                                injuries: unit.injuries,
+                              })}
                             </span>
                             <div className="flex items-center gap-1.5">
                               {ready && (
@@ -1937,7 +1972,7 @@ export default function App() {
                                   }}
                                   className="px-2 py-1 rounded bg-amber-500 text-[#0B0E14] font-semibold text-[11px]"
                                 >
-                                  Прорыв!
+                                  {t('breakthroughBtn')}
                                 </button>
                               )}
                               <button
@@ -1948,7 +1983,7 @@ export default function App() {
                                 }}
                                 className="px-2 py-1 rounded bg-[#1F293D] text-[#E2E8F0] hover:bg-[#2A3752] text-[11px]"
                               >
-                                Осмотр →
+                                {t('inspectBtn')}
                               </button>
                             </div>
                           </div>
@@ -2051,12 +2086,12 @@ export default function App() {
 
                           <div
                             className="pt-2 border-t border-[#1B2331] space-y-1"
-                            data-tooltip-title={`Сердце Дао: ${daoLabel}`}
+                            data-tooltip-title={`${t('daoHeartLabel')} ${daoLabel}`}
                             data-tooltip={formatDaoHeartTooltip(unit.daoHeart, daoState.subtitle)}
                           >
                             <div className="flex items-center justify-between">
                               <span className="text-[#94A3B8] font-semibold has-tooltip">
-                                Сердце Дао:
+                                {t('daoHeartLabel')}
                               </span>
                               <strong className={daoState.colorClass}>{daoLabel}</strong>
                             </div>
@@ -2068,9 +2103,9 @@ export default function App() {
                               />
                             </div>
                             <div className="flex items-center justify-between text-[11px] text-[#94A3B8]">
-                              <span className="text-rose-400">Бездна Демона</span>
-                              <span>Равновесие</span>
-                              <span className="text-amber-400">Свет Небес</span>
+                              <span className="text-rose-400">{t('daoScaleAbyss')}</span>
+                              <span>{t('daoScaleBalance')}</span>
+                              <span className="text-amber-400">{t('daoScaleLight')}</span>
                             </div>
                             <div className={`text-[11px] ${daoState.colorClass} opacity-90`}>
                               {daoState.subtitle}
@@ -2324,7 +2359,7 @@ export default function App() {
                       <div className="flex items-center gap-2">
                         <Gem className="w-4 h-4 text-amber-400" />
                         <h3 className="text-sm font-bold text-[#F3EFE6]">
-                          Ресурсы и Материалы Разлома
+                          {t('invResourcesTitle')}
                         </h3>
                       </div>
                       <button
@@ -2334,14 +2369,14 @@ export default function App() {
                         }}
                         className="text-[11px] text-amber-400 hover:text-amber-300 font-medium"
                       >
-                        Добыть в Разломе →
+                        {t('invGatherInRiftBtn')}
                       </button>
                     </div>
 
                     <div className="grid grid-cols-2 gap-2">
                       <div
-                        data-tooltip-title="Духовные камни"
-                        data-tooltip="Кристаллизованная духовная энергия Ци. Основная валюта для возвышения Обители, ковки снаряжения и варки пилюль."
+                        data-tooltip-title={t('resSpiritStones')}
+                        data-tooltip={t('resSpiritStonesTip')}
                         className="p-2.5 rounded-xl bg-[#0D1119] border border-[#1B2331] flex items-center gap-3"
                       >
                         <div className="w-9 h-9 rounded-lg bg-amber-500/15 border border-amber-500/30 flex items-center justify-center shrink-0">
@@ -2349,9 +2384,11 @@ export default function App() {
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className="text-xs font-semibold text-[#F3EFE6] truncate">
-                            Духовные камни
+                            {t('resSpiritStones')}
                           </div>
-                          <div className="text-[10px] text-[#94A3B8]">Валюта Секты</div>
+                          <div className="text-[10px] text-[#94A3B8]">
+                            {t('resSpiritStonesSub')}
+                          </div>
                         </div>
                         <div className="text-sm font-mono font-bold text-amber-400 tabular-nums">
                           {resources.spiritStones}
@@ -2359,8 +2396,8 @@ export default function App() {
                       </div>
 
                       <div
-                        data-tooltip-title="Болотное железо"
-                        data-tooltip="Тяжёлая руда из Карстового Разлома, пропитанная подземной Инь-Ци. Основа для ковки клинков и лат в Кузне."
+                        data-tooltip-title={t('resBogIron')}
+                        data-tooltip={t('resBogIronTip')}
                         className="p-2.5 rounded-xl bg-[#0D1119] border border-[#1B2331] flex items-center gap-3"
                       >
                         <div className="w-9 h-9 rounded-lg bg-slate-400/15 border border-slate-400/30 flex items-center justify-center shrink-0">
@@ -2368,9 +2405,9 @@ export default function App() {
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className="text-xs font-semibold text-[#F3EFE6] truncate">
-                            Болотное железо
+                            {t('resBogIron')}
                           </div>
-                          <div className="text-[10px] text-[#94A3B8]">Руда для ковки</div>
+                          <div className="text-[10px] text-[#94A3B8]">{t('resBogIronSub')}</div>
                         </div>
                         <div className="text-sm font-mono font-bold text-white tabular-nums">
                           {resources.bogIron}
@@ -2378,8 +2415,8 @@ export default function App() {
                       </div>
 
                       <div
-                        data-tooltip-title="Кровавый мох"
-                        data-tooltip="Алый пещерный мох, впитавший духовную кровь чудовищ. Главный алхимический реагент для целебных пилюль и эликсиров."
+                        data-tooltip-title={t('resBloodMoss')}
+                        data-tooltip={t('resBloodMossTip')}
                         className="p-2.5 rounded-xl bg-[#0D1119] border border-[#1B2331] flex items-center gap-3"
                       >
                         <div className="w-9 h-9 rounded-lg bg-rose-500/15 border border-rose-500/30 flex items-center justify-center shrink-0">
@@ -2387,9 +2424,9 @@ export default function App() {
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className="text-xs font-semibold text-[#F3EFE6] truncate">
-                            Кровавый мох
+                            {t('resBloodMoss')}
                           </div>
-                          <div className="text-[10px] text-[#94A3B8]">Трава алхимии</div>
+                          <div className="text-[10px] text-[#94A3B8]">{t('resBloodMossSub')}</div>
                         </div>
                         <div className="text-sm font-mono font-bold text-rose-400 tabular-nums">
                           {resources.bloodMoss}
@@ -2397,8 +2434,8 @@ export default function App() {
                       </div>
 
                       <div
-                        data-tooltip-title="Панцирь паука"
-                        data-tooltip="Прочный хитиновый щиток пещерного ткача. Используется в защитных отварах, пилюлях прорыва и укреплённых доспехах."
+                        data-tooltip-title={t('resSpiderCarapace')}
+                        data-tooltip={t('resSpiderCarapaceTip')}
                         className="p-2.5 rounded-xl bg-[#0D1119] border border-[#1B2331] flex items-center gap-3"
                       >
                         <div className="w-9 h-9 rounded-lg bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center shrink-0">
@@ -2406,9 +2443,11 @@ export default function App() {
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className="text-xs font-semibold text-[#F3EFE6] truncate">
-                            Панцирь паука
+                            {t('resSpiderCarapace')}
                           </div>
-                          <div className="text-[10px] text-[#94A3B8]">Трофей Разлома</div>
+                          <div className="text-[10px] text-[#94A3B8]">
+                            {t('resSpiderCarapaceSub')}
+                          </div>
                         </div>
                         <div className="text-sm font-mono font-bold text-emerald-400 tabular-nums">
                           {resources.spiderCarapace}
@@ -2423,7 +2462,7 @@ export default function App() {
                       <div className="flex items-center gap-2">
                         <FlaskConical className="w-4 h-4 text-emerald-400" />
                         <h3 className="text-sm font-bold text-[#F3EFE6]">
-                          Целебные снадобья и Эликсиры
+                          {t('invElixirsTitle')}
                         </h3>
                       </div>
                       <button
@@ -2433,14 +2472,14 @@ export default function App() {
                         }}
                         className="text-[11px] text-amber-400 hover:text-amber-300 font-medium"
                       >
-                        Павильон Алхимии →
+                        {t('invAlchemyPavilionBtn')}
                       </button>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                       <div
-                        data-tooltip-title="Пилюля Исцеления Ци"
-                        data-tooltip="Мгновенно восстанавливает 60% от максимального здоровья раненого ученика."
+                        data-tooltip-title={t('itemHealingPill')}
+                        data-tooltip={t('itemHealingPillDesc')}
                         className="p-2.5 rounded-xl bg-[#0D1119] border border-[#1B2331] flex flex-col justify-between gap-1.5"
                       >
                         <div className="flex items-center justify-between">
@@ -2448,20 +2487,22 @@ export default function App() {
                             <HeartPulse className="w-4 h-4 text-emerald-400" />
                           </div>
                           <span className="text-sm font-mono font-bold text-emerald-400 tabular-nums">
-                            {consumables.healingPills} шт.
+                            {t('pcsUnit', { count: consumables.healingPills })}
                           </span>
                         </div>
                         <div>
                           <div className="text-xs font-semibold text-[#F3EFE6]">
-                            Пилюля Исцеления
+                            {t('itemHealingPillShort')}
                           </div>
-                          <div className="text-[10px] text-[#94A3B8]">+60% макс. Здоровья</div>
+                          <div className="text-[10px] text-[#94A3B8]">
+                            {t('itemHealingPillSub')}
+                          </div>
                         </div>
                       </div>
 
                       <div
-                        data-tooltip-title="Отвар Очищения Меридианов"
-                        data-tooltip="Снимает до 2 стаков стихийных травм и разблокирует естественный отдых при 5/5 травмах."
+                        data-tooltip-title={t('itemInjuryDecoction')}
+                        data-tooltip={t('itemInjuryDecoctionDesc')}
                         className="p-2.5 rounded-xl bg-[#0D1119] border border-[#1B2331] flex flex-col justify-between gap-1.5"
                       >
                         <div className="flex items-center justify-between">
@@ -2469,20 +2510,22 @@ export default function App() {
                             <Droplets className="w-4 h-4 text-sky-400" />
                           </div>
                           <span className="text-sm font-mono font-bold text-sky-400 tabular-nums">
-                            {consumables.injuryDecoctions} шт.
+                            {t('pcsUnit', { count: consumables.injuryDecoctions })}
                           </span>
                         </div>
                         <div>
                           <div className="text-xs font-semibold text-[#F3EFE6]">
-                            Отвар Очищения
+                            {t('itemInjuryDecoctionShort')}
                           </div>
-                          <div className="text-[10px] text-[#94A3B8]">Снимает 2 травмы</div>
+                          <div className="text-[10px] text-[#94A3B8]">
+                            {t('itemInjuryDecoctionSub')}
+                          </div>
                         </div>
                       </div>
 
                       <div
-                        data-tooltip-title="Пилюля Возвышения Духа"
-                        data-tooltip="Повышает шанс успешного прорыва на новую ступень на +25% и смягчает откат при неудаче."
+                        data-tooltip-title={t('itemBreakthroughPill')}
+                        data-tooltip={t('itemBreakthroughPillDesc')}
                         className="p-2.5 rounded-xl bg-[#0D1119] border border-[#1B2331] flex flex-col justify-between gap-1.5"
                       >
                         <div className="flex items-center justify-between">
@@ -2490,14 +2533,16 @@ export default function App() {
                             <Flame className="w-4 h-4 text-amber-400" />
                           </div>
                           <span className="text-sm font-mono font-bold text-amber-400 tabular-nums">
-                            {consumables.breakthroughPills} шт.
+                            {t('pcsUnit', { count: consumables.breakthroughPills })}
                           </span>
                         </div>
                         <div>
                           <div className="text-xs font-semibold text-[#F3EFE6]">
-                            Пилюля Прорыва
+                            {t('itemBreakthroughPillShort')}
                           </div>
-                          <div className="text-[10px] text-[#94A3B8]">+25% к шансу прорыва</div>
+                          <div className="text-[10px] text-[#94A3B8]">
+                            {t('itemBreakthroughPillSub')}
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -2511,14 +2556,14 @@ export default function App() {
                       <div className="flex items-center gap-2">
                         <Sparkles className="w-4 h-4 text-amber-400" />
                         <h3 className="text-sm font-bold text-[#F3EFE6]">
-                          Пилюли Потенциала (На складе)
+                          {t('invPotentialPillsTitle')}
                         </h3>
                       </div>
                       <button
                         onClick={() => setAbodeSubTab('PILLS_GEAR')}
                         className="text-[11px] text-amber-400 hover:text-amber-300 font-medium"
                       >
-                        Передать ученику →
+                        {t('invGiveToDiscipleBtn')}
                       </button>
                     </div>
 
@@ -2567,7 +2612,7 @@ export default function App() {
                                 count > 0 ? 'text-amber-400' : 'text-[#64748B]'
                               }`}
                             >
-                              {count} шт.
+                              {t('pcsUnit', { count })}
                             </span>
                           </div>
                         );
@@ -2581,7 +2626,7 @@ export default function App() {
                       <div className="flex items-center gap-2">
                         <Hammer className="w-4 h-4 text-slate-300" />
                         <h3 className="text-sm font-bold text-[#F3EFE6]">
-                          Склад Арсенала ({warehouseGear.length} предм.)
+                          {t('invArsenalTitle', { count: warehouseGear.length })}
                         </h3>
                       </div>
                       <button
@@ -2591,13 +2636,13 @@ export default function App() {
                         }}
                         className="text-[11px] text-amber-400 hover:text-amber-300 font-medium"
                       >
-                        Кузня Чёрного Железа →
+                        {t('invBlacksmithForgeBtn')}
                       </button>
                     </div>
 
                     {warehouseGear.length === 0 ? (
                       <div className="flex-1 flex items-center justify-center p-4 rounded-xl bg-[#0D1119] border border-[#1B2331] text-xs text-[#64748B] text-center">
-                        На складе нет свободного оружия или доспехов. Выкуйте снаряжение в Кузне или снимите с учеников.
+                        {t('invArsenalEmptyText')}
                       </div>
                     ) : (
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-36 overflow-y-auto pr-1">
@@ -2625,7 +2670,9 @@ export default function App() {
                                   {item.name}
                                 </div>
                                 <div className="text-[10px] text-[#94A3B8]">
-                                  {item.slot === 'WEAPON' ? 'Оружие' : 'Доспех'}
+                                  {item.slot === 'WEAPON'
+                                    ? t('weaponSlotLabel')
+                                    : t('armorSlotLabel')}
                                 </div>
                               </div>
                             </div>
@@ -2633,7 +2680,7 @@ export default function App() {
                               onClick={() => setAbodeSubTab('PILLS_GEAR')}
                               className="px-2 py-1 rounded bg-[#1A2232] hover:bg-[#242F46] text-[10px] font-semibold text-amber-400 shrink-0"
                             >
-                              Экипировать
+                              {t('equipBtn')}
                             </button>
                           </div>
                         ))}
@@ -3458,13 +3505,13 @@ export default function App() {
                     onClick={() => setBreakthroughModalDiscipleId(null)}
                     className="flex-1 py-2 px-4 rounded-xl text-xs font-semibold bg-[#1A2232] text-[#CBD5E1]"
                   >
-                    Отмена
+                    {t('cancelBtn')}
                   </button>
                   <button
                     onClick={confirmRealmT2Breakthrough}
                     className="flex-1 py-2 px-4 rounded-xl text-xs font-semibold bg-amber-500 text-[#0B0E14]"
                   >
-                    Начать Прорыв
+                    {t('startBreakthroughBtn')}
                   </button>
                 </div>
               </div>
@@ -3473,10 +3520,112 @@ export default function App() {
         })()}
 
       {/* =====================================================================
+          МОДАЛЬНОЕ ОКНО: НАСТРОЙКИ (ПЕРЕКЛЮЧЕНИЕ ЯЗЫКА RU/EN С СОХРАНЕНИЕМ В LOCALSTORAGE)
+      ====================================================================== */}
+      {settingsModalOpen && (
+        <div
+          onClick={() => setSettingsModalOpen(false)}
+          className="fixed inset-0 z-50 bg-black/75 flex items-center justify-center p-4"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-[#121722] border border-amber-500/40 rounded-2xl max-w-md w-full p-5 space-y-4 shadow-2xl"
+          >
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <h3 className="text-base font-bold text-[#F3EFE6]">{t('settingsTitle')}</h3>
+                <p className="text-xs text-[#94A3B8] mt-0.5">{t('settingsSubtitle')}</p>
+              </div>
+              <button
+                onClick={() => setSettingsModalOpen(false)}
+                className="px-2.5 py-1 rounded-lg bg-[#1A2232] text-xs text-[#94A3B8] hover:text-[#F3EFE6]"
+              >
+                {t('closeBtn')}
+              </button>
+            </div>
+
+            {/* Выбор языка интерфейса (RU / EN) */}
+            <div className="p-3.5 rounded-xl bg-[#0D1119] border border-[#1B2331] space-y-2.5">
+              <div>
+                <div className="text-xs font-semibold text-[#F3EFE6]">
+                  {t('settingsLangLabel')}
+                </div>
+                <div className="text-[11px] text-[#94A3B8] mt-0.5">{t('settingsLangDesc')}</div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => handleLanguageChange('ru')}
+                  className={`py-2 px-3 rounded-xl border text-xs font-semibold transition-colors ${
+                    lang === 'ru'
+                      ? 'bg-amber-500 text-[#0B0E14] border-amber-400'
+                      : 'bg-[#141B28] border-[#222B3B] text-[#E2E8F0] hover:border-amber-500/40'
+                  }`}
+                >
+                  {t('langRu')}
+                </button>
+                <button
+                  onClick={() => handleLanguageChange('en')}
+                  className={`py-2 px-3 rounded-xl border text-xs font-semibold transition-colors ${
+                    lang === 'en'
+                      ? 'bg-amber-500 text-[#0B0E14] border-amber-400'
+                      : 'bg-[#141B28] border-[#222B3B] text-[#E2E8F0] hover:border-amber-500/40'
+                  }`}
+                >
+                  {t('langEn')}
+                </button>
+              </div>
+            </div>
+
+            {/* Настройка звука */}
+            <div className="p-3.5 rounded-xl bg-[#0D1119] border border-[#1B2331] flex items-center justify-between gap-3">
+              <div>
+                <div className="text-xs font-semibold text-[#F3EFE6]">
+                  {t('settingsSoundLabel')}
+                </div>
+                <div className="text-[11px] text-[#94A3B8] mt-0.5">{t('settingsSoundDesc')}</div>
+              </div>
+              <button
+                onClick={() => {
+                  soundFX.muted = !soundMuted;
+                  setSoundMuted(!soundMuted);
+                }}
+                className={`px-3 py-1.5 rounded-lg border text-xs font-semibold shrink-0 ${
+                  !soundMuted
+                    ? 'bg-amber-500/20 border-amber-500/40 text-amber-300'
+                    : 'bg-[#141B28] border-[#222B3B] text-[#94A3B8]'
+                }`}
+              >
+                {!soundMuted ? t('soundOnBtn') : t('soundOffBtn')}
+              </button>
+            </div>
+
+            {/* Сброс и закрытие */}
+            <div className="flex items-center justify-between gap-2 pt-1">
+              <button
+                onClick={() => {
+                  setSettingsModalOpen(false);
+                  resetAlphaState();
+                }}
+                className="px-3 py-2 rounded-lg text-xs font-semibold bg-rose-950/50 border border-rose-500/30 text-rose-300 hover:bg-rose-900/50"
+              >
+                {t('settingsResetBtn')}
+              </button>
+              <button
+                onClick={() => setSettingsModalOpen(false)}
+                className="px-4 py-2 rounded-lg text-xs font-semibold bg-amber-500 text-[#0B0E14] hover:bg-amber-400"
+              >
+                {t('closeBtn')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =====================================================================
           4. НИЖНЕЕ БАР-МЕНЮ (4 ГЛАВНЫХ РАЗДЕЛА)
       ====================================================================== */}
       <nav
-        aria-label="Нижняя навигация"
+        aria-label={t('navAriaLabel')}
         className="shrink-0 bg-[#0B0E14] border-t border-[#1E2636] grid grid-cols-4 items-center h-14 px-2 max-w-5xl w-full mx-auto"
       >
         <button
@@ -3487,7 +3636,7 @@ export default function App() {
         >
           <Home className="w-4 h-4" />
           <span className="mt-0.5 whitespace-nowrap">
-            Обитель ({disciples.length})
+            {t('tabAbode', { count: disciples.length })}
           </span>
         </button>
 
@@ -3499,7 +3648,9 @@ export default function App() {
         >
           <Compass className="w-4 h-4" />
           <span className="mt-0.5 whitespace-nowrap">
-            {expedition.active ? `Разлом (Ярус ${expedition.depthStage})` : 'Разлом'}
+            {expedition.active
+              ? t('tabExpeditionActive', { stage: expedition.depthStage })
+              : t('tabExpedition')}
           </span>
         </button>
 
@@ -3510,7 +3661,7 @@ export default function App() {
           }`}
         >
           <HeartPulse className="w-4 h-4" />
-          <span className="mt-0.5 whitespace-nowrap">Ремёсла</span>
+          <span className="mt-0.5 whitespace-nowrap">{t('tabCrafts')}</span>
         </button>
 
         <button
@@ -3520,7 +3671,7 @@ export default function App() {
           }`}
         >
           <BookOpen className="w-4 h-4" />
-          <span className="mt-0.5 whitespace-nowrap">Летопись</span>
+          <span className="mt-0.5 whitespace-nowrap">{t('tabChronicle')}</span>
         </button>
       </nav>
       <Tooltip />

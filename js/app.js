@@ -9,6 +9,94 @@
   const soundFX = window.SectGame.soundFX;
   const illustrations = window.SectGame.illustrations;
   const exporter = window.SectGame.exporter;
+  const i18n = window.SectGame.i18n;
+
+  function t(key, params) {
+    if (i18n && typeof i18n.t === 'function') {
+      return i18n.t(key, params);
+    }
+    return key;
+  }
+
+  function getCurrentLang() {
+    if (i18n) {
+      if (typeof i18n.getLanguage === 'function') return i18n.getLanguage();
+      if (typeof i18n.getLang === 'function') return i18n.getLang();
+    }
+    return 'ru';
+  }
+
+  function getArchInfo(archKey) {
+    if (i18n && typeof i18n.getArchetypeInfo === 'function') {
+      return i18n.getArchetypeInfo(archKey, math.ARCHETYPE_INFO);
+    }
+    return (math.ARCHETYPE_INFO && math.ARCHETYPE_INFO[archKey]) || math.ARCHETYPE_INFO.NOVICE;
+  }
+
+  function getTempInfo(tempKey) {
+    if (i18n && typeof i18n.getTemperamentInfo === 'function') {
+      return i18n.getTemperamentInfo(tempKey, math.TEMPERAMENT_INFO);
+    }
+    return (math.TEMPERAMENT_INFO && math.TEMPERAMENT_INFO[tempKey]) || math.TEMPERAMENT_INFO.NORMAL;
+  }
+
+  function getRootInfo(rootObj) {
+    if (i18n && typeof i18n.getSpiritRootInfo === 'function') {
+      return i18n.getSpiritRootInfo(rootObj);
+    }
+    return rootObj || { name: '', description: '' };
+  }
+
+  function getConstInfo(constObj) {
+    if (i18n && typeof i18n.getConstitutionInfo === 'function') {
+      return i18n.getConstitutionInfo(constObj);
+    }
+    return constObj || { name: '', description: '' };
+  }
+
+  function getStationInfo(stationKey) {
+    if (i18n && typeof i18n.getStationInfo === 'function') {
+      return i18n.getStationInfo(stationKey, math.CRAFT_STATIONS);
+    }
+    return math.CRAFT_STATIONS[stationKey];
+  }
+
+  function getRecipeInfo(rec) {
+    if (i18n && typeof i18n.getRecipeInfo === 'function') {
+      return i18n.getRecipeInfo(rec);
+    }
+    return rec;
+  }
+
+  function getPillInfo(statKey) {
+    if (i18n && typeof i18n.getStatPillInfo === 'function') {
+      return i18n.getStatPillInfo(statKey, math.STAT_PILL_LABELS);
+    }
+    return math.STAT_PILL_LABELS[statKey];
+  }
+
+  function getMatName(matKey) {
+    if (i18n && typeof i18n.getMaterialName === 'function') {
+      return i18n.getMaterialName(matKey, math.MATERIAL_NAMES);
+    }
+    return (math.MATERIAL_NAMES && math.MATERIAL_NAMES[matKey]) || matKey;
+  }
+
+  function getGearDisplayName(gearItem) {
+    if (!gearItem) return '';
+    if (i18n && typeof i18n.getGearInfo === 'function') {
+      return i18n.getGearInfo(gearItem).name;
+    }
+    return gearItem.name || '';
+  }
+
+  function getGearDisplayDesc(gearItem) {
+    if (!gearItem) return '';
+    if (i18n && typeof i18n.getGearInfo === 'function') {
+      return i18n.getGearInfo(gearItem).description;
+    }
+    return gearItem.description || '';
+  }
 
   const SAVE_STORAGE_KEY = 'idle_sect_manager_alpha_v1';
   const RECRUIT_COST = 25;
@@ -35,7 +123,8 @@
   };
 
   function getTimeStr() {
-    return new Date().toLocaleTimeString('ru-RU', {
+    const locale = getCurrentLang() === 'en' ? 'en-US' : 'ru-RU';
+    return new Date().toLocaleTimeString(locale, {
       hour: '2-digit',
       minute: '2-digit',
       second: '2-digit',
@@ -170,8 +259,10 @@
   const saved = loadSavedGame();
 
   const state = {
+    lang: getCurrentLang() || (saved && saved.lang) || 'ru',
+    settingsModalOpen: false,
     activeTab: (saved && saved.activeTab) || 'ABODE', // ABODE | EXPEDITION | CRAFTS | CHRONICLE
-    abodeSubTab: (saved && saved.abodeSubTab) || 'SANCTUARY', // SANCTUARY | ROSTER
+    abodeSubTab: (saved && saved.abodeSubTab) || 'SANCTUARY', // SANCTUARY | ROSTER | INVENTORY
     expeditionSubTab: (saved && saved.expeditionSubTab) || 'ARENA', // ARENA | LINEUP | LOG
     craftsSubTab:
       saved && saved.craftsSubTab && math.CRAFT_STATIONS[saved.craftsSubTab]
@@ -255,6 +346,7 @@
         };
       });
       const payload = {
+        lang: state.lang,
         activeTab: state.activeTab,
         abodeSubTab: state.abodeSubTab,
         expeditionSubTab: state.expeditionSubTab,
@@ -615,6 +707,9 @@
    * Отображает атмосферный титул текущего порога Сердца Дао без раскрытия чисел.
    */
   function getDaoHeartLabel(daoHeart) {
+    if (i18n && typeof i18n.getDaoHeartLabel === 'function') {
+      return i18n.getDaoHeartLabel(daoHeart);
+    }
     if (math && typeof math.getDaoHeartLabel === 'function') {
       return math.getDaoHeartLabel(daoHeart);
     }
@@ -2859,29 +2954,29 @@
   // ==========================================================================
 
   function formatArchetypeBonusText(archKey) {
-    const info = math.ARCHETYPE_INFO[archKey] || math.ARCHETYPE_INFO.NOVICE;
+    const info = getArchInfo(archKey);
     const b = info.statBonuses || {};
     const parts = [];
-    if (b.maxHp) parts.push('+' + b.maxHp + ' к Здоровью');
-    if (b.pAtk) parts.push('+' + b.pAtk + ' к Физ. атаке');
-    if (b.mAtk) parts.push('+' + b.mAtk + ' к Маг. атаке');
-    if (b.pDef) parts.push('+' + b.pDef + ' к Физ. защите');
-    if (b.mDef) parts.push('+' + b.mDef + ' к Маг. защите');
-    if (b.spd) parts.push('+' + b.spd + ' к Скорости');
-    if (b.crit) parts.push('+' + b.crit + '% к Шансу крита');
-    if (b.eva) parts.push('+' + b.eva + '% к Уклонению');
+    if (b.maxHp) parts.push('+' + b.maxHp + ' ' + t('bonusMaxHp'));
+    if (b.pAtk) parts.push('+' + b.pAtk + ' ' + t('bonusPAtk'));
+    if (b.mAtk) parts.push('+' + b.mAtk + ' ' + t('bonusMAtk'));
+    if (b.pDef) parts.push('+' + b.pDef + ' ' + t('bonusPDef'));
+    if (b.mDef) parts.push('+' + b.mDef + ' ' + t('bonusMDef'));
+    if (b.spd) parts.push('+' + b.spd + ' ' + t('bonusSpd'));
+    if (b.crit) parts.push('+' + b.crit + '% ' + t('bonusCrit'));
+    if (b.eva) parts.push('+' + b.eva + '% ' + t('bonusEva'));
     if (parts.length === 0) {
-      return 'Базовые параметры 1-го царства (Закалка Тела). При прорыве во 2-е царство открывается выбор боевой специализации.';
+      return t('archNoviceBonusText');
     }
-    return 'Бонусы пути: ' + parts.join(', ') + '.';
+    return t('archPathBonusesPrefix') + parts.join(', ') + '.';
   }
 
   function formatArchetypeTooltip(archKey) {
-    const info = math.ARCHETYPE_INFO[archKey] || math.ARCHETYPE_INFO.NOVICE;
+    const info = getArchInfo(archKey);
     const dmgLabel =
       info.attackType === 'MAGICAL'
-        ? 'Духовная атака (бьёт по Маг. защите)'
-        : 'Физическая атака (бьёт по Физ. защите)';
+        ? t('archMagicalAttack')
+        : t('archPhysicalAttack');
     return (
       info.role +
       ' · ' +
@@ -2896,19 +2991,7 @@
   function formatDaoHeartTooltip(daoHeart, daoState) {
     const label = getDaoHeartLabel(daoHeart);
     const subtitle = (daoState && daoState.subtitle) || '';
-    return (
-      'Текущая ступень духа: «' +
-      label +
-      '».\n' +
-      subtitle +
-      '\n\nСтупени Весов Сердца Дао:\n' +
-      '• Алмазное Сердце — ускоряет постижение Ци, укрепляет защиту и оберегает от искажения при прорыве.\n' +
-      '• Чистый Разум — гармоничное равновесие духа без штрафов.\n' +
-      '• Смятение — внутренние сомнения ослабляют защиту и мешают прорыву.\n' +
-      '• Одержимость — яростный напор в атаке ценой снижения защиты.\n' +
-      '• Истинный Демон — пробуждение Дьявольского пути: сокрушительная мощь в ущерб защите.\n\n' +
-      'Победы, прорывы и отдых ведут к Свету Небес; гибель соратников и ранения на грани смерти ведут к Бездне Демона.'
-    );
+    return t('daoTooltipCurrentStage', { label: label, subtitle: subtitle });
   }
 
   // ==========================================================================
@@ -2919,7 +3002,7 @@
     if (state.disciples.length === 0) return '';
     return (
       '<div class="row-wrap" style="overflow-x:auto;flex-shrink:0;padding-bottom:2px">' +
-        '<span class="text-2xs text-muted">Адепт:</span>' +
+        '<span class="text-2xs text-muted">' + t('adeptLabel') + '</span>' +
         state.disciples
           .map(function (d) {
             const isSel = selectedDisciple && selectedDisciple.id === d.id;
@@ -2943,7 +3026,236 @@
     );
   }
 
+  function renderAbodeInventory(selectedDisciple) {
+    const statKeys = Object.keys(math.STAT_PILL_LABELS);
+    const totalStatPills = statKeys.reduce(function (acc, k) {
+      return acc + (state.consumables.statPills[k] || 0);
+    }, 0);
+
+    const iconStone =
+      '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="text-amber"><polygon points="12 2 20 8 17 21 7 21 4 8 12 2"/><path d="M4 8h16"/><path d="M12 2l-3 6 3 13 3-13-3-6z"/></svg>';
+    const iconIron =
+      '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="text-bright"><path d="M6 19l-3-6 4-8 8-2 6 5-2 9-13 2z"/><path d="M9 12l4-3 3 5"/></svg>';
+    const iconMoss =
+      '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="text-rose"><path d="M12 22v-9"/><path d="M12 13C7 13 4 9 6 3c5 1 6 5 6 10z"/><path d="M12 16c4 0 8-3 6-9-4 1-6 4-6 9z"/></svg>';
+    const iconCarapace =
+      '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="text-emerald"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M8 10h8"/><path d="M9 14h6"/></svg>';
+    const iconPotion =
+      '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 2v6l-5 8a4 4 0 0 0 3.4 6h7.2a4 4 0 0 0 3.4-6l-5-8V2"/><path d="M8.5 2h7"/><path d="M7 15h10"/></svg>';
+    const iconPill =
+      '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="text-amber"><circle cx="12" cy="12" r="8"/><circle cx="10" cy="10" r="2"/></svg>';
+
+    return (
+      '<div class="flex-col-fill">' +
+        renderDiscipleSelectorBar(selectedDisciple) +
+        '<div class="scroll-area" style="display:flex;flex-direction:column;gap:10px">' +
+          '<section class="card">' +
+            '<div class="row-between">' +
+              '<h3 style="font-size:14px">' + t('invSpiritualResourcesTitle') + '</h3>' +
+              '<span class="text-2xs text-muted">' + t('invExtractedInRift') + '</span>' +
+            '</div>' +
+            '<div class="grid-4-cols">' +
+              '<div class="inner-box has-tooltip" style="display:flex;align-items:center;gap:10px" data-tooltip-title="' + escapeHtml(t('resSpiritStonesTitle')) + '" data-tooltip="' + escapeHtml(t('resSpiritStonesTooltip')) + '">' +
+                '<div style="width:36px;height:36px;border-radius:8px;background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.35);display:flex;align-items:center;justify-content:center;flex-shrink:0">' + iconStone + '</div>' +
+                '<div style="min-width:0">' +
+                  '<div class="text-2xs text-muted truncate">' + t('resSpiritStonesTitle') + '</div>' +
+                  '<div class="font-mono font-semibold text-amber" style="font-size:15px">' + state.resources.spiritStones + ' <span class="text-2xs text-muted">' + t('pcsUnit') + '</span></div>' +
+                '</div>' +
+              '</div>' +
+              '<div class="inner-box has-tooltip" style="display:flex;align-items:center;gap:10px" data-tooltip-title="' + escapeHtml(t('resBogIronTitle')) + '" data-tooltip="' + escapeHtml(t('resBogIronTooltip')) + '">' +
+                '<div style="width:36px;height:36px;border-radius:8px;background:rgba(148,163,184,0.12);border:1px solid rgba(148,163,184,0.35);display:flex;align-items:center;justify-content:center;flex-shrink:0">' + iconIron + '</div>' +
+                '<div style="min-width:0">' +
+                  '<div class="text-2xs text-muted truncate">' + t('resBogIronTitle') + '</div>' +
+                  '<div class="font-mono font-semibold text-bright" style="font-size:15px">' + state.resources.bogIron + ' <span class="text-2xs text-muted">' + t('pcsUnit') + '</span></div>' +
+                '</div>' +
+              '</div>' +
+              '<div class="inner-box has-tooltip" style="display:flex;align-items:center;gap:10px" data-tooltip-title="' + escapeHtml(t('resBloodMossTitle')) + '" data-tooltip="' + escapeHtml(t('resBloodMossTooltip')) + '">' +
+                '<div style="width:36px;height:36px;border-radius:8px;background:rgba(244,63,94,0.12);border:1px solid rgba(244,63,94,0.35);display:flex;align-items:center;justify-content:center;flex-shrink:0">' + iconMoss + '</div>' +
+                '<div style="min-width:0">' +
+                  '<div class="text-2xs text-muted truncate">' + t('resBloodMossTitle') + '</div>' +
+                  '<div class="font-mono font-semibold text-rose" style="font-size:15px">' + state.resources.bloodMoss + ' <span class="text-2xs text-muted">' + t('pcsUnit') + '</span></div>' +
+                '</div>' +
+              '</div>' +
+              '<div class="inner-box has-tooltip" style="display:flex;align-items:center;gap:10px" data-tooltip-title="' + escapeHtml(t('resSpiderCarapaceTitle')) + '" data-tooltip="' + escapeHtml(t('resSpiderCarapaceTooltip')) + '">' +
+                '<div style="width:36px;height:36px;border-radius:8px;background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.35);display:flex;align-items:center;justify-content:center;flex-shrink:0">' + iconCarapace + '</div>' +
+                '<div style="min-width:0">' +
+                  '<div class="text-2xs text-muted truncate">' + t('resSpiderCarapaceTitle') + '</div>' +
+                  '<div class="font-mono font-semibold text-emerald" style="font-size:15px">' + state.resources.spiderCarapace + ' <span class="text-2xs text-muted">' + t('pcsUnit') + '</span></div>' +
+                '</div>' +
+              '</div>' +
+            '</div>' +
+          '</section>' +
+          '<div class="grid-2">' +
+            '<section class="card">' +
+              '<div class="row-between">' +
+                '<h3 style="font-size:14px">' + t('invElixirsTitle') + '</h3>' +
+                '<button class="btn btn-sm" data-action="goto-crafts-potential">' + t('toAlchemistBtn') + '</button>' +
+              '</div>' +
+              '<div style="display:flex;flex-direction:column;gap:6px">' +
+                '<div class="inner-box row-between text-xs has-tooltip" data-tooltip-title="' + escapeHtml(t('healingPillTooltipTitle')) + '" data-tooltip="' + escapeHtml(t('healingPillTooltipBody')) + '">' +
+                  '<div style="display:flex;align-items:center;gap:8px">' +
+                    '<span class="text-emerald">' + iconPotion + '</span>' +
+                    '<div>' +
+                      '<div class="font-semibold text-bright">' + t('healingPillTooltipTitle') + '</div>' +
+                      '<div class="text-2xs text-muted">' + t('invHealPillDesc') + '</div>' +
+                    '</div>' +
+                  '</div>' +
+                  '<div class="row-wrap">' +
+                    '<span class="font-mono font-semibold text-emerald">' + state.consumables.healingPills + ' ' + t('pcsShort') + '</span>' +
+                    (selectedDisciple
+                      ? '<button class="btn btn-sm btn-emerald" data-action="heal-disciple" data-id="' + selectedDisciple.id + '" ' + (state.consumables.healingPills <= 0 ? 'disabled' : '') + '>' + t('invGiveBtn') + '</button>'
+                      : '') +
+                  '</div>' +
+                '</div>' +
+                '<div class="inner-box row-between text-xs has-tooltip" data-tooltip-title="' + escapeHtml(t('injuryDecoctionTooltipTitle')) + '" data-tooltip="' + escapeHtml(t('injuryDecoctionTooltipBody')) + '">' +
+                  '<div style="display:flex;align-items:center;gap:8px">' +
+                    '<span class="text-cyan">' + iconPotion + '</span>' +
+                    '<div>' +
+                      '<div class="font-semibold text-bright">' + t('injuryDecoctionTooltipTitle') + '</div>' +
+                      '<div class="text-2xs text-muted">' + t('invInjuryDecoctionDesc') + '</div>' +
+                    '</div>' +
+                  '</div>' +
+                  '<div class="row-wrap">' +
+                    '<span class="font-mono font-semibold text-cyan">' + state.consumables.injuryDecoctions + ' ' + t('pcsShort') + '</span>' +
+                    (selectedDisciple
+                      ? '<button class="btn btn-sm btn-amber" data-action="cure-injury" data-id="' + selectedDisciple.id + '" ' + (state.consumables.injuryDecoctions <= 0 || selectedDisciple.injuries === 0 ? 'disabled' : '') + '>' + t('invGiveBtn') + '</button>'
+                      : '') +
+                  '</div>' +
+                '</div>' +
+                '<div class="inner-box row-between text-xs has-tooltip" data-tooltip-title="' + escapeHtml(t('breakPillTooltipTitle')) + '" data-tooltip="' + escapeHtml(t('breakPillTooltipBody')) + '">' +
+                  '<div style="display:flex;align-items:center;gap:8px">' +
+                    '<span class="text-amber">' + iconPotion + '</span>' +
+                    '<div>' +
+                      '<div class="font-semibold text-bright">' + t('breakPillTooltipTitle') + '</div>' +
+                      '<div class="text-2xs text-muted">' + t('invBreakPillDesc') + '</div>' +
+                    '</div>' +
+                  '</div>' +
+                  '<span class="font-mono font-semibold text-amber">' + state.consumables.breakthroughPills + ' ' + t('pcsShort') + '</span>' +
+                '</div>' +
+              '</div>' +
+            '</section>' +
+            '<section class="card">' +
+              '<div class="row-between">' +
+                '<h3 style="font-size:14px">' + t('invPotentialPillsTitle', { count: totalStatPills }) + '</h3>' +
+                '<span class="text-2xs text-muted">' +
+                  (selectedDisciple ? t('invForAdept', { name: selectedDisciple.name }) : t('invSelectAdept')) +
+                '</span>' +
+              '</div>' +
+              '<div class="grid-2">' +
+                statKeys
+                  .map(function (key) {
+                    const pillInfo = getPillInfo(key);
+                    const stock = state.consumables.statPills[key] || 0;
+                    const discSlot = selectedDisciple && selectedDisciple.pillGrid[key];
+                    const canFeed =
+                      selectedDisciple &&
+                      discSlot &&
+                      discSlot.consumed < discSlot.max &&
+                      stock > 0;
+                    return (
+                      '<div class="inner-box row-between text-xs has-tooltip" data-tooltip-title="' +
+                        escapeHtml(pillInfo.name) +
+                        '" data-tooltip="' +
+                        escapeHtml(
+                          t('craftsPillTooltip', {
+                            bonus: pillInfo.bonusText,
+                            stock: stock,
+                            consumed: discSlot
+                              ? t('craftsPillConsumedSuffix', {
+                                  consumed: discSlot.consumed,
+                                  max: discSlot.max,
+                                })
+                              : '',
+                          })
+                        ) +
+                        '">' +
+                        '<div style="display:flex;align-items:center;gap:6px;min-width:0">' +
+                          iconPill +
+                          '<div style="min-width:0">' +
+                            '<div class="font-semibold text-bright truncate">' +
+                              pillInfo.shortStat +
+                              ' <span class="text-amber font-mono">(' +
+                              stock +
+                              ')</span>' +
+                            '</div>' +
+                            (discSlot
+                              ? '<div class="text-2xs text-muted font-mono">' +
+                                t('invLimitLabel', {
+                                  consumed: discSlot.consumed,
+                                  max: discSlot.max,
+                                }) +
+                                '</div>'
+                              : '') +
+                          '</div>' +
+                        '</div>' +
+                        (selectedDisciple
+                          ? '<button class="btn btn-sm" data-action="feed-stat-pill" data-id="' +
+                            selectedDisciple.id +
+                            '" data-stat="' +
+                            key +
+                            '" ' +
+                            (canFeed ? '' : 'disabled') +
+                            '>' +
+                            t('takeBtn') +
+                            '</button>'
+                          : '') +
+                      '</div>'
+                    );
+                  })
+                  .join('') +
+              '</div>' +
+            '</section>' +
+          '</div>' +
+          '<section class="card">' +
+            '<div class="row-between">' +
+              '<h3 style="font-size:14px">' + t('invArsenalTitle', { count: state.warehouseGear.length }) + '</h3>' +
+              '<button class="btn btn-sm" data-action="goto-crafts-forge">' + t('toForgeBtn') + '</button>' +
+            '</div>' +
+            (state.warehouseGear.length === 0
+              ? '<div class="text-xs text-dim" style="text-align:center;padding:14px">' + t('invEmptyWarehouse') + '</div>'
+              : '<div class="grid-2">' +
+                  state.warehouseGear
+                    .map(function (item) {
+                      return (
+                        '<div class="inner-box row-between text-xs">' +
+                          '<div style="min-width:0;flex:1">' +
+                            '<div class="font-semibold ' +
+                              (item.isFlawless ? 'text-amber' : 'text-bright') +
+                              ' truncate">' +
+                              escapeHtml(getGearDisplayName(item)) +
+                              ' <span class="text-2xs text-muted font-mono">[T' +
+                              (item.tier || 1) +
+                              ']</span>' +
+                            '</div>' +
+                            '<div class="text-2xs text-muted truncate">' +
+                              escapeHtml(getGearDisplayDesc(item)) +
+                            '</div>' +
+                          '</div>' +
+                          (selectedDisciple
+                            ? '<button class="btn btn-sm btn-amber" data-action="equip-gear" data-id="' +
+                              selectedDisciple.id +
+                              '" data-gear="' +
+                              item.id +
+                              '">' +
+                              t('equipBtn') +
+                              '</button>'
+                            : '') +
+                        '</div>'
+                      );
+                    })
+                    .join('') +
+                '</div>') +
+          '</section>' +
+        '</div>' +
+      '</div>'
+    );
+  }
+
   function renderAbodeSection(selectedDisciple, isSoftlocked) {
+    if (state.abodeSubTab === 'INVENTORY') {
+      return renderAbodeInventory(selectedDisciple);
+    }
+
     if (state.abodeSubTab === 'SANCTUARY') {
       const canUp =
         state.sectLevel === 1 &&
@@ -2959,45 +3271,45 @@
             '<section class="card">' +
               '<div>' +
                 '<div class="row-between">' +
-                  '<h2 style="font-size:16px">Возвышение Обители</h2>' +
-                  '<span class="text-xs text-amber font-mono">Ступень ' +
-                    state.sectLevel +
-                    '/2</span>' +
+                  '<h2 style="font-size:16px">' + t('abodeUpgradeTitle') + '</h2>' +
+                  '<span class="text-xs text-amber font-mono">' +
+                    t('abodeTierLabel', { level: state.sectLevel }) +
+                  '</span>' +
                 '</div>' +
                 '<p class="text-xs text-muted" style="margin-top:4px">' +
                   (state.sectLevel === 1
-                    ? '«Забытая Нора»: разреженная Ци режет опыт на пике I царства (-50%) и снижает шанс возвышения во II царство (-35%).'
-                    : '«Твердыня Глубин»: источник Инь-Ци открыт! Сняты штрафы среды, опыт +35%, лечение 10 ед./тик.') +
+                    ? t('abodeLv1Desc')
+                    : t('abodeLv2Desc')) +
                 '</p>' +
               '</div>' +
               (state.sectLevel === 1
                 ? '<div class="divider-top">' +
-                    '<div class="text-2xs font-mono" style="margin-bottom:6px;color:#cbd5e1">Цена: 80 камн. · 18 жел. · 18 мха · 12 панц.</div>' +
+                    '<div class="text-2xs font-mono" style="margin-bottom:6px;color:#cbd5e1">' + t('abodeUpgradeCostText') + '</div>' +
                     '<button class="btn btn-amber" style="width:100%" data-action="upgrade-sect" ' +
                     (canUp ? '' : 'disabled') +
-                    '>Возвысить до «Твердыни Глубин»</button>' +
+                    '>' + t('abodeUpgradeBtn') + '</button>' +
                   '</div>'
-                : '<div class="divider-top text-xs text-emerald font-semibold">Обитель достигла максимальной II ступени Альфы.</div>') +
+                : '<div class="divider-top text-xs text-emerald font-semibold">' + t('abodeMaxTierReached') + '</div>') +
             '</section>' +
             '<section class="card">' +
               '<div>' +
                 '<div class="row-between">' +
-                  '<h2 style="font-size:16px">Чайный Павильон</h2>' +
+                  '<h2 style="font-size:16px">' + t('teaPavilionTitle') + '</h2>' +
                   '<span class="text-xs text-muted">' +
                     (state.freeRecruitsLeft > 0
-                      ? 'Бесплатно: ' + state.freeRecruitsLeft
-                      : RECRUIT_COST + ' камней') +
+                      ? t('freeRecruitsCount', { count: state.freeRecruitsLeft })
+                      : t('recruitCostStones', { cost: RECRUIT_COST })) +
                   '</span>' +
                 '</div>' +
-                '<p class="text-xs text-muted" style="margin-top:4px">Приём послушников со случайным Корнем, Конституцией, Характером и сеткой пилюль.</p>' +
+                '<p class="text-xs text-muted" style="margin-top:4px">' + t('teaPavilionDesc') + '</p>' +
               '</div>' +
               '<div class="divider-top" style="display:flex;flex-direction:column;gap:6px">' +
                 '<button class="btn btn-amber" style="width:100%" data-action="recruit-disciple" ' +
                 (canRecruit ? '' : 'disabled') +
                 '>' +
                   (state.freeRecruitsLeft > 0
-                    ? 'Принять первого послушника (Бесплатно)'
-                    : 'Принять послушника (' + RECRUIT_COST + ' камней)') +
+                    ? t('recruitFirstFreeBtn')
+                    : t('recruitPaidBtn', { cost: RECRUIT_COST })) +
                 '</button>' +
                 '<div class="row-wrap">' +
                   '<button class="btn ' +
@@ -3009,14 +3321,14 @@
                     : '') +
                   '>' +
                     (state.rewardedAdTimer !== null
-                      ? 'Дар Небес: ' + state.rewardedAdTimer + ' сек...'
+                      ? t('heavensGraceTimer', { sec: state.rewardedAdTimer })
                       : isSoftlocked
-                      ? 'Воззвать к Милости Небес'
-                      : 'Милость Небес (резерв)') +
+                      ? t('heavensGraceCallBtn')
+                      : t('heavensGraceReserveBtn')) +
                   '</button>' +
-                  '<button class="btn" data-action="set-abode-sub" data-sub="ROSTER">К составу (' +
-                    state.disciples.length +
-                  ')</button>' +
+                  '<button class="btn" data-action="set-abode-sub" data-sub="ROSTER">' +
+                    t('toRosterBtn', { count: state.disciples.length }) +
+                  '</button>' +
                 '</div>' +
               '</div>' +
             '</section>' +
@@ -3034,21 +3346,23 @@
       '<div class="flex-col-fill">' +
         '<div class="row-between" style="flex-shrink:0">' +
           '<div>' +
-            '<h2 style="font-size:16px">Адепты Секты (' +
-              state.disciples.length +
-            ')</h2>' +
-            '<p class="text-xs text-muted">Нажмите на карточку или кнопку «Осмотр», чтобы открыть параметры, пилюли и доспехи ученика.</p>' +
+            '<h2 style="font-size:16px">' +
+              t('rosterTitle', { count: state.disciples.length }) +
+            '</h2>' +
+            '<p class="text-xs text-muted">' + t('rosterSubtitle') + '</p>' +
           '</div>' +
           '<button class="btn btn-sm btn-amber" data-action="recruit-disciple" ' +
           (canRecruit ? '' : 'disabled') +
-          '>+ Нанять (' +
-          (state.freeRecruitsLeft > 0 ? 'Бесплатно' : RECRUIT_COST + ' камн.') +
-          ')</button>' +
+          '>' +
+          (state.freeRecruitsLeft > 0
+            ? t('recruitBtnShortFree')
+            : t('recruitBtnShortPaid', { cost: RECRUIT_COST })) +
+          '</button>' +
         '</div>' +
         (state.disciples.length === 0
           ? '<div class="card" style="flex:1;align-items:center;justify-content:center;text-align:center">' +
-              '<p class="text-xs text-muted">В секте пока нет учеников. Примите первого послушника в Чайном павильоне.</p>' +
-              '<button class="btn btn-amber" data-action="set-abode-sub" data-sub="SANCTUARY">Перейти в Чайный павильон</button>' +
+              '<p class="text-xs text-muted">' + t('emptyRosterMsg') + '</p>' +
+              '<button class="btn btn-amber" data-action="set-abode-sub" data-sub="SANCTUARY">' + t('gotoTeaPavilionBtn') + '</button>' +
             '</div>'
           : '<div class="scroll-area grid-2" style="align-content:start">' +
               state.disciples
@@ -3074,8 +3388,10 @@
                   const daoState = math.getDaoHeartState(unit);
                   const daoLabel = getDaoHeartLabel(unit.daoHeart);
                   const daoThumbPos = (unit.daoHeart + 100) / 2;
-                  const archInfo = math.ARCHETYPE_INFO[unit.archetype];
-                  const tempInfo = math.TEMPERAMENT_INFO[unit.temperament];
+                  const archInfo = getArchInfo(unit.archetype);
+                  const tempInfo = getTempInfo(unit.temperament);
+                  const rootInfo = getRootInfo(unit.spiritRoot);
+                  const constInfo = getConstInfo(unit.constitution);
 
                   return (
                     '<div class="card ' +
@@ -3096,35 +3412,40 @@
                               : 'text-muted') +
                             ' font-mono">' +
                             (unit.status === 'EXPEDITION'
-                              ? 'В походе'
+                              ? t('statusInExpedition')
                               : unit.status === 'PAVILION_DUTY' &&
                                 unit.assignedStation &&
                                 math.CRAFT_STATIONS[unit.assignedStation]
-                              ? 'Мастер: ' + math.CRAFT_STATIONS[unit.assignedStation].name
-                              : 'Отдых в обители') +
+                              ? t('statusMasterPrefix', {
+                                  station: getStationInfo(unit.assignedStation).name,
+                                })
+                              : t('statusResting')) +
                           '</span>' +
                         '</div>' +
                         '<div class="text-2xs text-muted" style="margin-top:2px">' +
-                          '<span class="has-tooltip" data-tooltip-title="Боевой Путь: ' +
-                            escapeHtml(archInfo.name) +
+                          '<span class="has-tooltip" data-tooltip-title="' +
+                            escapeHtml(t('combatPathTooltipTitle', { name: archInfo.name })) +
                             '" data-tooltip="' +
                             escapeHtml(formatArchetypeTooltip(unit.archetype)) +
                             '">' +
                             escapeHtml(archInfo.name) +
                           '</span>' +
-                          ' · <span class="has-tooltip" data-tooltip-title="Ступень культивации" data-tooltip="' +
+                          ' · <span class="has-tooltip" data-tooltip-title="' +
+                            escapeHtml(t('cultivationStageTooltipTitle')) +
+                            '" data-tooltip="' +
                             escapeHtml(
-                              math.getRealmLabel(unit.realmTier, unit.subLevel) +
-                                '. На 5-й ступени при полном опыте Ци открывается прорыв.'
+                              t('cultivationStageTooltipBody', {
+                                realm: math.getRealmLabel(unit.realmTier, unit.subLevel),
+                              })
                             ) +
-                            '">Т' +
+                            '">T' +
                             unit.realmTier +
                             ' (' +
                             unit.subLevel +
                             '/5)</span> · ' +
-                          (unit.gender === 'YANG' ? 'Ян' : 'Инь') +
-                          ' · <span class="has-tooltip" data-tooltip-title="Характер: ' +
-                            escapeHtml(tempInfo.name) +
+                          (unit.gender === 'YANG' ? t('genderYangShort') : t('genderYinShort')) +
+                          ' · <span class="has-tooltip" data-tooltip-title="' +
+                            escapeHtml(t('temperamentTooltipTitle', { name: tempInfo.name })) +
                             '" data-tooltip="' +
                             escapeHtml(tempInfo.summary) +
                             '">' +
@@ -3136,28 +3457,28 @@
                             (unit.spiritRoot && unit.spiritRoot.isDarkRoot
                               ? 'text-demonic'
                               : '') +
-                            '" data-tooltip-title="Духовный корень: ' +
-                            escapeHtml(unit.spiritRoot.name) +
+                            '" data-tooltip-title="' +
+                            escapeHtml(t('spiritRootTooltipTitle', { name: rootInfo.name })) +
                             '" data-tooltip="' +
-                            escapeHtml((unit.spiritRoot && unit.spiritRoot.description) || '') +
+                            escapeHtml(rootInfo.description || '') +
                             '">' +
-                            escapeHtml(unit.spiritRoot.name) +
-                          '</span> · <span class="has-tooltip" data-tooltip-title="Конституция тела: ' +
-                            escapeHtml(unit.constitution.name) +
+                            escapeHtml(rootInfo.name) +
+                          '</span> · <span class="has-tooltip" data-tooltip-title="' +
+                            escapeHtml(t('constitutionTooltipTitle', { name: constInfo.name })) +
                             '" data-tooltip="' +
-                            escapeHtml((unit.constitution && unit.constitution.description) || '') +
+                            escapeHtml(constInfo.description || '') +
                             '">' +
-                            escapeHtml(unit.constitution.name) +
+                            escapeHtml(constInfo.name) +
                           '</span>' +
                         '</div>' +
                       '</div>' +
-                      '<div class="inner-box" style="padding:6px 8px;display:flex;flex-direction:column;gap:4px" data-tooltip-title="Сердце Дао: ' +
-                        escapeHtml(daoLabel) +
+                      '<div class="inner-box" style="padding:6px 8px;display:flex;flex-direction:column;gap:4px" data-tooltip-title="' +
+                        escapeHtml(t('daoHeartTooltipTitle', { label: daoLabel })) +
                         '" data-tooltip="' +
                         escapeHtml(formatDaoHeartTooltip(unit.daoHeart, daoState)) +
                         '">' +
                         '<div class="row-between text-2xs">' +
-                          '<span class="text-muted font-semibold has-tooltip">Сердце Дао:</span>' +
+                          '<span class="text-muted font-semibold has-tooltip">' + t('daoHeartLabel') + '</span>' +
                           '<strong class="' +
                             daoState.colorClass +
                             '">' +
@@ -3171,9 +3492,9 @@
                             '%"></div>' +
                         '</div>' +
                         '<div class="row-between text-2xs text-muted" style="font-size:10px">' +
-                          '<span class="text-rose">Бездна Демона</span>' +
-                          '<span>Равновесие</span>' +
-                          '<span class="text-amber">Свет Небес</span>' +
+                          '<span class="text-rose">' + t('daoAbyssDemon') + '</span>' +
+                          '<span>' + t('daoBalance') + '</span>' +
+                          '<span class="text-amber">' + t('daoLightHeavens') + '</span>' +
                         '</div>' +
                         '<div class="text-2xs ' +
                           daoState.colorClass +
@@ -3182,8 +3503,8 @@
                         '</div>' +
                       '</div>' +
                       '<div class="grid-3-cols font-mono text-2xs">' +
-                        '<div data-tooltip-title="Жизненная сила (Здоровье)" data-tooltip="Текущий запас здоровья адепта. При падении до нуля в бою наступает гибель. Восстанавливается отдыхом в Обители или Пилюлями Исцеления.">' +
-                          '<div class="row-between"><span>Здоровье</span><span>' +
+                        '<div data-tooltip-title="' + escapeHtml(t('hpTooltipTitle')) + '" data-tooltip="' + escapeHtml(t('hpTooltipBody')) + '">' +
+                          '<div class="row-between"><span>' + t('hpLabel') + '</span><span>' +
                             eff.hp +
                             '/' +
                             eff.maxHp +
@@ -3194,8 +3515,8 @@
                             hpPct +
                             '%"></div></div>' +
                         '</div>' +
-                        '<div data-tooltip-title="Личный Щит Ци" data-tooltip="Энергетический барьер (30% от макс. ОЗ + бонусы брони), принимающий на себя первый удар в каждой схватке и мгновенно восстанавливающийся после завершения волны врагов.">' +
-                          '<div class="row-between"><span class="text-cyan">Щит Ци</span><span class="text-cyan">' +
+                        '<div data-tooltip-title="' + escapeHtml(t('qiShieldTooltipTitle')) + '" data-tooltip="' + escapeHtml(t('qiShieldTooltipBody')) + '">' +
+                          '<div class="row-between"><span class="text-cyan">' + t('qiShieldLabel') + '</span><span class="text-cyan">' +
                             eff.qiShield +
                             '/' +
                             eff.maxQiShield +
@@ -3204,8 +3525,8 @@
                             shieldPct +
                             '%"></div></div>' +
                         '</div>' +
-                        '<div data-tooltip-title="Постижение Ци (Опыт)" data-tooltip="Накопленный духовный опыт. Пополняется в походах и при труде в Павильоне Ремёсел. При достижении максимума адепт готов к Прорыву ступени.">' +
-                          '<div class="row-between"><span>Опыт Ци</span><span>' +
+                        '<div data-tooltip-title="' + escapeHtml(t('qiExpTooltipTitle')) + '" data-tooltip="' + escapeHtml(t('qiExpTooltipBody')) + '">' +
+                          '<div class="row-between"><span>' + t('qiExpLabel') + '</span><span>' +
                             unit.exp +
                             '/' +
                             unit.maxExp +
@@ -3216,20 +3537,21 @@
                         '</div>' +
                       '</div>' +
                       '<div class="row-between divider-top text-2xs">' +
-                        '<span class="font-mono text-muted has-tooltip" data-tooltip-title="Мошна и Внутренние Травмы" data-tooltip="Мошна: личная доля ученика (10% от добытых в походе Камней Духа).\nТравмы (до 5): каждое тяжёлое увечье снижает боевые характеристики на 10%. Лечится Отваром Очищения.">Мошна: ' +
-                          unit.personalStones +
-                          ' · Травмы: ' +
-                          unit.injuries +
-                          '/5</span>' +
+                        '<span class="font-mono text-muted has-tooltip" data-tooltip-title="' + escapeHtml(t('purseInjuriesTooltipTitle')) + '" data-tooltip="' + escapeHtml(t('purseInjuriesTooltipBody')) + '">' +
+                          t('purseInjuriesSummary', {
+                            stones: unit.personalStones,
+                            injuries: unit.injuries,
+                          }) +
+                        '</span>' +
                         '<div class="row-wrap">' +
                           (ready
                             ? '<button class="btn btn-sm btn-amber" data-action="breakthrough" data-id="' +
                               unit.id +
-                              '" data-tooltip-title="Прорыв ступени" data-tooltip="Накоплено достаточно Ци для перехода на следующую ступень культивации!">Прорыв!</button>'
+                              '" data-tooltip-title="' + escapeHtml(t('breakthroughTooltipTitle')) + '" data-tooltip="' + escapeHtml(t('breakthroughTooltipBody')) + '">' + t('breakthroughBtn') + '</button>'
                             : '') +
                           '<button class="btn btn-sm" data-action="open-disciple-card" data-id="' +
                             unit.id +
-                            '">Осмотр →</button>' +
+                            '">' + t('inspectBtn') + '</button>' +
                         '</div>' +
                       '</div>' +
                     '</div>'
@@ -3265,23 +3587,23 @@
           ) +
           '<div class="card" style="flex-shrink:0;padding:6px 12px">' +
             '<div class="row-between">' +
-              '<span class="text-xs font-mono">Ярус ' +
-                state.expedition.depthStage +
-                '/5 · Волна ' +
-                state.expedition.waveInStage +
-                '/3 · ' +
+              '<span class="text-xs font-mono">' +
+                t('expHeaderStatus', {
+                  stage: state.expedition.depthStage,
+                  wave: state.expedition.waveInStage,
+                }) +
                 (!state.expedition.active
-                  ? 'В ожидании'
+                  ? t('expStatusStandby')
                   : isMarching
-                  ? '<span class="text-cyan font-semibold">Тропа (' +
-                    marchLeft +
-                    ' сек. до события)</span>'
-                  : '<span class="text-rose font-semibold">Бой · Раунд ' +
-                    state.expedition.combatRound +
+                  ? '<span class="text-cyan font-semibold">' +
+                    t('expStatusTrail', { sec: marchLeft }) +
+                    '</span>'
+                  : '<span class="text-rose font-semibold">' +
+                    t('expStatusCombatRound', { round: state.expedition.combatRound }) +
                     '</span>') +
               '</span>' +
               '<div class="row-wrap">' +
-                '<span class="text-2xs text-muted">Ярус:</span>' +
+                '<span class="text-2xs text-muted">' + t('expTierLabel') + '</span>' +
                 [1, 2, 3, 4, 5]
                   .map(function (st) {
                     return (
@@ -3303,8 +3625,8 @@
           '<div class="battle-arena-grid">' +
             '<div class="battle-panel">' +
               '<div class="row-between text-2xs text-muted" style="flex-shrink:0">' +
-                '<span class="truncate">Походный строй (Поз. 1 — 80% ударов)</span>' +
-                '<button class="btn btn-sm" data-action="set-exp-sub" data-sub="LINEUP">Строй</button>' +
+                '<span class="truncate">' + t('expLineupHeader') + '</span>' +
+                '<button class="btn btn-sm" data-action="set-exp-sub" data-sub="LINEUP">' + t('expLineupBtn') + '</button>' +
               '</div>' +
               '<div class="battle-slots">' +
                 squadInSlots
@@ -3324,34 +3646,36 @@
                     return (
                       '<div class="battle-slot">' +
                         '<div class="row-between text-2xs text-muted font-mono">' +
-                          '<span>Поз. ' + (idx + 1) + '</span>' +
-                          '<span>' + (idx === 0 ? 'Авангард' : 'Тыл') + '</span>' +
+                          '<span>' + t('expPosLabel', { pos: idx + 1 }) + '</span>' +
+                          '<span>' + (idx === 0 ? t('expVanguard') : t('expRear')) + '</span>' +
                         '</div>' +
                         (member && eff
                           ? '<div class="font-semibold text-bright truncate" style="margin-top:1px">' +
                               escapeHtml(member.name) +
                             '</div>' +
                             '<div class="row-between text-2xs font-mono" style="margin-top:2px">' +
-                              '<span class="text-cyan">Щит ' +
-                                eff.qiShield +
-                                '/' +
-                                eff.maxQiShield +
+                              '<span class="text-cyan">' +
+                                t('expShieldShort', {
+                                  cur: eff.qiShield,
+                                  max: eff.maxQiShield,
+                                }) +
                               '</span>' +
-                              '<span>ОЗ ' +
-                                eff.hp +
-                                '/' +
-                                eff.maxHp +
+                              '<span>' +
+                                t('expHpShort', {
+                                  cur: eff.hp,
+                                  max: eff.maxHp,
+                                }) +
                               '</span>' +
                             '</div>' +
-                            '<div class="progress-track" title="Личный Щит Ци"><div class="progress-fill fill-cyan" style="width:' +
+                            '<div class="progress-track" title="' + escapeHtml(t('qiShieldTooltipTitle')) + '"><div class="progress-fill fill-cyan" style="width:' +
                               shieldPct +
                               '%"></div></div>' +
-                            '<div class="progress-track" title="Здоровье"><div class="progress-fill ' +
+                            '<div class="progress-track" title="' + escapeHtml(t('hpLabel')) + '"><div class="progress-fill ' +
                               (eff.hp / eff.maxHp < 0.4 ? 'fill-rose' : 'fill-emerald') +
                               '" style="width:' +
                               hpPct +
                               '%"></div></div>'
-                          : '<div class="text-2xs text-dim" style="padding:4px 0">Пусто</div>') +
+                          : '<div class="text-2xs text-dim" style="padding:4px 0">' + t('expEmptySlot') + '</div>') +
                       '</div>'
                     );
                   })
@@ -3362,33 +3686,34 @@
               '<div class="row-between text-2xs text-muted" style="flex-shrink:0">' +
                 '<span>' +
                   (isMarching
-                    ? 'Продвижение по тропе Разлома'
-                    : 'Противники в Карстовом Разломе') +
+                    ? t('expAdvancingTrail')
+                    : t('expEnemiesInRift')) +
                 '</span>' +
                 (state.expedition.active
                   ? '<span class="font-mono ' +
                     (isMarching ? 'text-cyan' : 'text-rose') +
                     '">' +
-                    (isMarching ? 'Фаза: В пути' : 'Фаза: Схватка') +
+                    (isMarching ? t('expPhaseMarching') : t('expPhaseCombat')) +
                     '</span>'
                   : '') +
               '</div>' +
               (state.expedition.active && isMarching
                 ? '<div class="inner-box" style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:6px;text-align:center">' +
-                    '<div class="font-semibold text-cyan text-xs">«Отряд продвигается по тропе...»</div>' +
-                    '<div class="text-2xs text-muted font-mono">Ярус ' +
-                      state.expedition.depthStage +
-                      ' · До следующего события: ' +
-                      marchLeft +
-                      ' тик. (шаг ' +
-                      marchStep +
-                      '/' +
-                      marchTotal +
-                      ')</div>' +
+                    '<div class="font-semibold text-cyan text-xs">' + t('expSquadAdvancingQuote') + '</div>' +
+                    '<div class="text-2xs text-muted font-mono">' +
+                      t('expNextEventTicks', {
+                        stage: state.expedition.depthStage,
+                        left: marchLeft,
+                        step: marchStep,
+                        total: marchTotal,
+                      }) +
+                    '</div>' +
                     '<div class="progress-track" style="height:8px"><div class="progress-fill fill-cyan" style="width:' +
                       Math.min(100, Math.max(12, marchPct)) +
                       '%"></div></div>' +
-                    '<div class="text-2xs text-muted">Шанс события на тропе: <span class="text-rose font-mono">75% бой</span> · <span class="text-emerald font-mono">25% находка ресурсов</span></div>' +
+                    '<div class="text-2xs text-muted">' +
+                      t('expTrailEventOdds') +
+                      '<span class="text-rose font-mono">' + t('expTrailOddsCombat') + '</span> · <span class="text-emerald font-mono">' + t('expTrailOddsLoot') + '</span></div>' +
                   '</div>'
                 : state.expedition.active && state.expedition.enemies.length > 0
                 ? '<div class="battle-slots">' +
@@ -3413,9 +3738,15 @@
                                 en.stats.maxHp +
                               '</span>' +
                               '<span>' +
-                                (en.damageType === 'MAGICAL' ? 'Дух.Атк ' + en.stats.mAtk : 'Атк ' + en.stats.pAtk) +
-                                ' · Защ ' +
-                                en.stats.pDef +
+                                (en.damageType === 'MAGICAL'
+                                  ? t('expEnemyMagAtk', {
+                                      atk: en.stats.mAtk,
+                                      def: en.stats.pDef,
+                                    })
+                                  : t('expEnemyPhysAtk', {
+                                      atk: en.stats.pAtk,
+                                      def: en.stats.pDef,
+                                    })) +
                               '</span>' +
                             '</div>' +
                             '<div class="progress-track"><div class="progress-fill fill-rose" style="width:' +
@@ -3426,19 +3757,19 @@
                       })
                       .join('') +
                   '</div>'
-                : '<div style="flex:1;display:flex;align-items:center;justify-content:center;text-align:center" class="text-xs text-dim">Отряд в безопасности Обители. Нажмите «Начать поход в Разлом» ниже.</div>') +
+                : '<div style="flex:1;display:flex;align-items:center;justify-content:center;text-align:center" class="text-xs text-dim">' + t('expSquadSafeInAbode') + '</div>') +
             '</div>' +
           '</div>' +
           '<div id="expedition-log">' +
             state.expedition.combatLog
               .map(function (line) {
                 let cls = '';
-                if (line.indexOf('ДЕМОН СЕРДЦА') !== -1) cls = 'text-demonic font-semibold';
-                else if (line.indexOf('ТАЛИСМАН ВОЗВРАТА') !== -1) cls = 'text-amber font-semibold';
-                else if (line.indexOf('СЕРДЦЕ ДАО') !== -1) cls = 'text-amber font-semibold';
-                else if (line.indexOf('ГИБЕЛЬ В БОЮ') !== -1) cls = 'text-rose font-semibold';
-                else if (line.indexOf('Находка на тропе') !== -1) cls = 'text-cyan font-semibold';
-                else if (line.indexOf('зачищена') !== -1) cls = 'text-emerald font-semibold';
+                if (line.indexOf('ДЕМОН СЕРДЦА') !== -1 || line.indexOf('HEART DEMON') !== -1) cls = 'text-demonic font-semibold';
+                else if (line.indexOf('ТАЛИСМАН ВОЗВРАТА') !== -1 || line.indexOf('RETURN TALISMAN') !== -1) cls = 'text-amber font-semibold';
+                else if (line.indexOf('СЕРДЦЕ ДАО') !== -1 || line.indexOf('DAO HEART') !== -1) cls = 'text-amber font-semibold';
+                else if (line.indexOf('ГИБЕЛЬ В БОЮ') !== -1 || line.indexOf('FALLEN IN BATTLE') !== -1) cls = 'text-rose font-semibold';
+                else if (line.indexOf('Находка на тропе') !== -1 || line.indexOf('Trail Discovery') !== -1) cls = 'text-cyan font-semibold';
+                else if (line.indexOf('зачищена') !== -1 || line.indexOf('cleared') !== -1) cls = 'text-emerald font-semibold';
                 return (
                   '<div class="' +
                   cls +
@@ -3452,42 +3783,41 @@
           '<div class="card" style="flex-shrink:0;padding:8px 12px;display:flex;flex-direction:column;gap:6px">' +
             '<div class="row-between">' +
               '<div class="row-wrap text-xs font-mono">' +
-                '<span class="text-muted has-tooltip" data-tooltip-title="Буфер добычи (Закон 90/10)" data-tooltip="Трофеи, собранные отрядом в текущем походе. При возвращении или сборе 90% поступает в казну Обители, а 10% Камней Духа распределяется в личные мошны бойцов.">Буфер (90/10):</span>' +
-                '<span>Камни ' +
-                  state.expedition.lootBuffer.spiritStones +
-                  ' · Жел. ' +
-                  state.expedition.lootBuffer.bogIron +
-                  ' · Мох ' +
-                  state.expedition.lootBuffer.bloodMoss +
-                  ' · Панц. ' +
-                  state.expedition.lootBuffer.spiderCarapace +
+                '<span class="text-muted has-tooltip" data-tooltip-title="' + escapeHtml(t('lootBufferTooltipTitle')) + '" data-tooltip="' + escapeHtml(t('lootBufferTooltipBody')) + '">' + t('lootBufferLabel') + '</span>' +
+                '<span>' +
+                  t('lootBufferSummary', {
+                    stones: state.expedition.lootBuffer.spiritStones,
+                    iron: state.expedition.lootBuffer.bogIron,
+                    moss: state.expedition.lootBuffer.bloodMoss,
+                    carapace: state.expedition.lootBuffer.spiderCarapace,
+                  }) +
                 '</span>' +
                 '<button class="btn btn-sm btn-amber" data-action="claim-loot" ' +
                 (lootBufferTotal === 0 ? 'disabled' : '') +
-                '>Собрать</button>' +
+                '>' + t('collectLootBtn') + '</button>' +
               '</div>' +
               '<div class="row-wrap">' +
                 (!state.expedition.active
                   ? '<button class="btn btn-emerald" data-action="start-expedition" ' +
                     (hasSquad ? '' : 'disabled') +
-                    '>Начать поход в Разлом</button>'
+                    '>' + t('startExpeditionBtn') + '</button>'
                   : '<button class="btn" data-action="toggle-pause">' +
-                      (state.expedition.isPaused ? 'Продолжить' : 'Пауза') +
+                      (state.expedition.isPaused ? t('resumeBtn') : t('pauseBtn')) +
                     '</button>' +
-                    '<button class="btn btn-rose" data-action="retreat">Отступить в Обитель</button>') +
+                    '<button class="btn btn-rose" data-action="retreat">' + t('retreatToAbodeBtn') + '</button>') +
               '</div>' +
             '</div>' +
             '<div class="row-between divider-top" style="padding-top:6px">' +
               '<div class="text-2xs text-muted">' +
-                '<span class="text-amber font-semibold has-tooltip" data-tooltip-title="Талисман Возврата (Авто-отступление)" data-tooltip="Плановое срабатывание Талисмана Возврата безопасно эвакуирует отряд в Обитель с сохранением всей добычи и НЕ травмирует Сердце Дао, если никто из соратников не пал и здоровье бойца не было пробито ниже критического порога 15% ОЗ.">Талисман Возврата (Авто-отступление):</span> ' +
-                'эвакуация отряда при падении ОЗ любого бойца' +
+                '<span class="text-amber font-semibold has-tooltip" data-tooltip-title="' + escapeHtml(t('returnTalismanTooltipTitle')) + '" data-tooltip="' + escapeHtml(t('returnTalismanTooltipBody')) + '">' + t('returnTalismanLabel') + '</span> ' +
+                t('returnTalismanDesc') +
               '</div>' +
               '<div class="row-wrap">' +
                 [
-                  { val: 0, label: 'Выкл', tip: 'Авто-отступление отключено: отряд сражается до ручного отступления или победы.' },
-                  { val: 25, label: '≤ 25% ОЗ', tip: 'Экстренная эвакуация отряда при падении здоровья любого бойца до 25% или ниже.' },
-                  { val: 40, label: '≤ 40% ОЗ (без травм)', tip: 'Безопасный тактический отход при 40% ОЗ до зоны риска тяжёлых ранений и ментального шока.' },
-                  { val: 50, label: '≤ 50% ОЗ', tip: 'Осторожный тактический отход при падении здоровья любого бойца до половины.' },
+                  { val: 0, label: t('talismanOff'), tip: t('talismanOffTip') },
+                  { val: 25, label: t('talisman25'), tip: t('talisman25Tip') },
+                  { val: 40, label: t('talisman40'), tip: t('talisman40Tip') },
+                  { val: 50, label: t('talisman50'), tip: t('talisman50Tip') },
                 ]
                   .map(function (opt) {
                     const cur = Number(state.expedition.autoRetreatThreshold) || 0;
@@ -3497,10 +3827,10 @@
                       (isActive ? 'active' : '') +
                       '" data-action="set-auto-retreat" data-threshold="' +
                       opt.val +
-                      '" data-tooltip-title="Талисман Возврата: ' +
-                      opt.label +
+                      '" data-tooltip-title="' +
+                      escapeHtml(t('returnTalismanTooltipTitle') + ': ' + opt.label) +
                       '" data-tooltip="' +
-                      opt.tip +
+                      escapeHtml(opt.tip) +
                       '">' +
                       opt.label +
                       '</button>'
@@ -3519,91 +3849,87 @@
         '<section class="card flex-col-fill">' +
           '<div class="row-between" style="flex-shrink:0">' +
             '<div>' +
-              '<h2 style="font-size:16px">Построение Отряда и Медицина</h2>' +
-              '<p class="text-xs text-muted">Ученики, несущие службу в павильонах ремёсел, не могут входить в походный строй.</p>' +
+              '<h2 style="font-size:16px">' + t('lineupTitle') + '</h2>' +
+              '<p class="text-xs text-muted">' + t('lineupSubtitle') + '</p>' +
             '</div>' +
-            '<span class="text-xs font-mono has-tooltip" data-tooltip-title="Походная медицина Обители" data-tooltip="Пилюля Исцеления мгновенно восстанавливает 60% от макс. Здоровья ученика.\nОтвар Очищения снимает до 2 стаков внутренних травм меридианов.">Пилюли: ' +
-              state.consumables.healingPills +
-              ' · Отвары: ' +
-              state.consumables.injuryDecoctions +
+            '<span class="text-xs font-mono has-tooltip" data-tooltip-title="' + escapeHtml(t('lineupMedTooltipTitle')) + '" data-tooltip="' + escapeHtml(t('lineupMedTooltipBody')) + '">' +
+              t('lineupMedStock', {
+                pills: state.consumables.healingPills,
+                decoctions: state.consumables.injuryDecoctions,
+              }) +
             '</span>' +
           '</div>' +
           '<div class="scroll-area" style="display:flex;flex-direction:column;gap:8px">' +
             (state.disciples.length === 0
-              ? '<div class="text-xs text-muted" style="text-align:center;padding:24px">Нет учеников в секте.</div>'
+              ? '<div class="text-xs text-muted" style="text-align:center;padding:24px">' + t('noDisciplesInSect') + '</div>'
               : state.disciples
                   .map(function (d) {
                     const eff = math.calculateEffectiveStats(d);
                     const daoState = math.getDaoHeartState(d);
                     const daoLabel = getDaoHeartLabel(d.daoHeart);
                     const isOnDuty = d.status === 'PAVILION_DUTY';
+                    const archInfo = getArchInfo(d.archetype);
                     return (
                       '<div class="inner-box row-between text-xs">' +
                         '<div>' +
                           '<div class="font-semibold text-bright">' +
                             escapeHtml(d.name) +
-                            ' · <span class="text-muted has-tooltip" data-tooltip-title="Боевой Путь: ' +
-                            escapeHtml(math.ARCHETYPE_INFO[d.archetype].name) +
+                            ' · <span class="text-muted has-tooltip" data-tooltip-title="' +
+                            escapeHtml(t('combatPathTooltipTitle', { name: archInfo.name })) +
                             '" data-tooltip="' +
                             escapeHtml(formatArchetypeTooltip(d.archetype)) +
                             '">' +
-                            math.ARCHETYPE_INFO[d.archetype].name +
+                            escapeHtml(archInfo.name) +
                             '</span> · <span class="has-tooltip ' +
                             daoState.colorClass +
-                            '" data-tooltip-title="Сердце Дао: ' +
-                            escapeHtml(daoLabel) +
+                            '" data-tooltip-title="' +
+                            escapeHtml(t('daoHeartTooltipTitle', { label: daoLabel })) +
                             '" data-tooltip="' +
                             escapeHtml(formatDaoHeartTooltip(d.daoHeart, daoState)) +
                             '">' +
                             escapeHtml(daoLabel) +
                             '</span>' +
                             (isOnDuty && d.assignedStation && math.CRAFT_STATIONS[d.assignedStation]
-                              ? ' <span class="text-amber font-mono">[Пост: ' +
-                                math.CRAFT_STATIONS[d.assignedStation].name +
+                              ? ' <span class="text-amber font-mono">[' +
+                                t('statusMasterPrefix', {
+                                  station: getStationInfo(d.assignedStation).name,
+                                }) +
                                 ']</span>'
                               : '') +
                           '</div>' +
-                          '<div class="text-2xs text-muted font-mono">Здоровье: ' +
-                            eff.hp +
-                            '/' +
-                            eff.maxHp +
-                            ' · <span class="text-cyan">Щит Ци: ' +
-                            eff.qiShield +
-                            '/' +
-                            eff.maxQiShield +
-                            '</span> · Травмы: ' +
-                            d.injuries +
-                            '/5 · Защита: ' +
-                            eff.pDef +
-                            '/' +
-                            eff.mDef +
+                          '<div class="text-2xs text-muted font-mono">' +
+                            t('lineupDiscipleStats', {
+                              hp: eff.hp,
+                              maxHp: eff.maxHp,
+                              shield: eff.qiShield,
+                              maxShield: eff.maxQiShield,
+                              injuries: d.injuries,
+                              pDef: eff.pDef,
+                              mDef: eff.mDef,
+                            }) +
                           '</div>' +
                         '</div>' +
                         '<div class="row-wrap">' +
                           '<button class="btn btn-sm btn-emerald" data-action="heal-disciple" data-id="' +
                             d.id +
-                            '" data-tooltip-title="Пилюля Исцеления Ци" data-tooltip="Мгновенно восстанавливает 60% от максимального здоровья ученика (в запасе: ' +
-                            state.consumables.healingPills +
-                            ' шт.)." ' +
+                            '" data-tooltip-title="' + escapeHtml(t('healingPillTooltipTitle')) + '" data-tooltip="' + escapeHtml(t('healingPillTooltipBody')) + '" ' +
                             (state.consumables.healingPills <= 0 ||
                             eff.hp >= eff.maxHp
                               ? 'disabled'
                               : '') +
-                          '>+Здоровье</button>' +
+                          '>' + t('plusHpBtn') + '</button>' +
                           '<button class="btn btn-sm btn-amber" data-action="cure-injury" data-id="' +
                             d.id +
-                            '" data-tooltip-title="Отвар Очищения Меридианов" data-tooltip="Снимает до 2 стаков стихийных травм и разблокирует естественную регенерацию при 5/5 травмах (в запасе: ' +
-                            state.consumables.injuryDecoctions +
-                            ' шт.)." ' +
+                            '" data-tooltip-title="' + escapeHtml(t('injuryDecoctionTooltipTitle')) + '" data-tooltip="' + escapeHtml(t('injuryDecoctionTooltipBody')) + '" ' +
                             (state.consumables.injuryDecoctions <= 0 ||
                             d.injuries === 0
                               ? 'disabled'
                               : '') +
-                          '>-Травма</button>' +
+                          '>' + t('minusInjuryBtn') + '</button>' +
                           (isOnDuty && d.assignedStation
                             ? '<button class="btn btn-sm" data-action="unassign-station-master" data-station="' +
                               d.assignedStation +
-                              '">Снять с павильона</button>'
+                              '">' + t('unassignFromPavilionBtn') + '</button>'
                             : [0, 1, 2, 3]
                                 .map(function (slotIdx) {
                                   return (
@@ -3615,8 +3941,8 @@
                                     slotIdx +
                                     '" ' +
                                     (state.expedition.active ? 'disabled' : '') +
-                                    '>Поз.' +
-                                    (slotIdx + 1) +
+                                    '>' +
+                                    t('posShortBtn', { pos: slotIdx + 1 }) +
                                     '</button>'
                                   );
                                 })
@@ -3635,18 +3961,18 @@
     return (
       '<section class="card flex-col-fill">' +
         '<div class="row-between" style="flex-shrink:0">' +
-          '<h2 style="font-size:16px">Журнал Боевого Похода</h2>' +
-          '<span class="text-xs text-muted">Автоскролл к последнему событию</span>' +
+          '<h2 style="font-size:16px">' + t('expLogTitle') + '</h2>' +
+          '<span class="text-xs text-muted">' + t('expLogSubtitle') + '</span>' +
         '</div>' +
         '<div id="expedition-log" style="flex:1;max-height:none">' +
           state.expedition.combatLog
             .map(function (line) {
               let cls = '';
-              if (line.indexOf('ДЕМОН СЕРДЦА') !== -1) cls = 'text-demonic font-semibold';
-              else if (line.indexOf('СЕРДЦЕ ДАО') !== -1) cls = 'text-amber font-semibold';
-              else if (line.indexOf('ГИБЕЛЬ В БОЮ') !== -1) cls = 'text-rose font-semibold';
-              else if (line.indexOf('Находка на тропе') !== -1) cls = 'text-cyan font-semibold';
-              else if (line.indexOf('зачищена') !== -1) cls = 'text-emerald font-semibold';
+              if (line.indexOf('ДЕМОН СЕРДЦА') !== -1 || line.indexOf('HEART DEMON') !== -1) cls = 'text-demonic font-semibold';
+              else if (line.indexOf('СЕРДЦЕ ДАО') !== -1 || line.indexOf('DAO HEART') !== -1) cls = 'text-amber font-semibold';
+              else if (line.indexOf('ГИБЕЛЬ В БОЮ') !== -1 || line.indexOf('FALLEN IN BATTLE') !== -1) cls = 'text-rose font-semibold';
+              else if (line.indexOf('Находка на тропе') !== -1 || line.indexOf('Trail Discovery') !== -1) cls = 'text-cyan font-semibold';
+              else if (line.indexOf('зачищена') !== -1 || line.indexOf('cleared') !== -1) cls = 'text-emerald font-semibold';
               return (
                 '<div class="' +
                 cls +
@@ -3665,7 +3991,7 @@
     const stationKey = math.CRAFT_STATIONS[state.craftsSubTab]
       ? state.craftsSubTab
       : 'FORGE';
-    const stationMeta = math.CRAFT_STATIONS[stationKey];
+    const stationMeta = getStationInfo(stationKey);
     const stationState = state.craftStations[stationKey];
     const master = getStationMaster(stationKey);
 
@@ -3685,33 +4011,35 @@
           '<div class="row-between">' +
             '<div>' +
               '<span class="font-semibold text-bright text-sm">' +
-                stationMeta.fullTitle +
+                escapeHtml(stationMeta.fullTitle) +
               '</span>' +
               ' <span class="text-2xs text-muted">(' +
-                stationMeta.profession +
+                escapeHtml(stationMeta.profession) +
               ')</span>' +
             '</div>' +
             '<div class="text-2xs font-mono">' +
               (master
-                ? '<span class="text-emerald font-semibold">Назначенный мастер: ' +
-                  escapeHtml(master.name) +
-                  ' (Т' +
-                  master.realmTier +
-                  ' · ' +
-                  master.subLevel +
-                  '/5 · Опыт ' +
-                  master.exp +
-                  '/' +
-                  master.maxExp +
-                  ') · Скорость 100%</span>'
-                : '<span class="text-amber font-semibold">Без мастера: доступен только крафт Т1 со штрафом к скорости -50%</span>') +
+                ? '<span class="text-emerald font-semibold">' +
+                  escapeHtml(
+                    t('craftsAssignedMasterInfo', {
+                      name: master.name,
+                      tier: master.realmTier,
+                      sub: master.subLevel,
+                      exp: master.exp,
+                      maxExp: master.maxExp,
+                    })
+                  ) +
+                  '</span>'
+                : '<span class="text-amber font-semibold">' +
+                  escapeHtml(t('craftsNoMasterWarning')) +
+                  '</span>') +
             '</div>' +
           '</div>' +
           '<div class="row-between">' +
             '<div class="row-wrap">' +
-              '<span class="text-2xs text-muted">Назначить мастера:</span>' +
+              '<span class="text-2xs text-muted">' + t('craftsAssignMasterLabel') + '</span>' +
               (state.disciples.length === 0
-                ? '<span class="text-2xs text-dim">Нет учеников в секте</span>'
+                ? '<span class="text-2xs text-dim">' + t('noDisciplesInSect') + '</span>'
                 : state.disciples
                     .map(function (d) {
                       const isThisMaster = master && master.id === d.id;
@@ -3720,7 +4048,7 @@
                         d.status === 'PAVILION_DUTY' &&
                         d.assignedStation &&
                         d.assignedStation !== stationKey
-                          ? math.CRAFT_STATIONS[d.assignedStation].name
+                          ? getStationInfo(d.assignedStation).name
                           : null;
                       return (
                         '<button class="btn btn-sm ' +
@@ -3733,17 +4061,17 @@
                         (inCombat || activeCraft ? 'disabled' : '') +
                         '>' +
                         escapeHtml(d.name) +
-                        ' (Т' +
+                        ' (T' +
                         d.realmTier +
                         ')' +
                         (isThisMaster
                           ? ' ✓'
                           : inCombat
-                          ? ' [В бою]'
+                          ? t('craftsInCombatTag')
                           : otherStation
-                          ? ' [' + otherStation + ']'
+                          ? ' [' + escapeHtml(otherStation) + ']'
                           : d.lineupSlot !== null
-                          ? ' [Строй ' + (d.lineupSlot + 1) + ']'
+                          ? t('craftsInLineupTag', { pos: d.lineupSlot + 1 })
                           : '') +
                         '</button>'
                       );
@@ -3754,7 +4082,7 @@
                   stationKey +
                   '" ' +
                   (activeCraft ? 'disabled' : '') +
-                  '>Снять мастера</button>'
+                  '>' + t('craftsUnassignMasterBtn') + '</button>'
                 : '') +
             '</div>' +
             (stationState.lastResultText
@@ -3773,14 +4101,15 @@
         '<div class="grid-2" style="flex:1 1 0%;min-height:0">' +
           '<section class="card flex-col-fill">' +
             '<div class="row-between" style="flex-shrink:0">' +
-              '<h3 style="font-size:14px">Чертежи и Рецепты: ' +
-                stationMeta.name +
+              '<h3 style="font-size:14px">' +
+                escapeHtml(t('craftsBlueprintsTitle', { station: stationMeta.name })) +
               '</h3>' +
-              '<span class="text-2xs text-muted has-tooltip" data-tooltip-title="Три Порога Мастерства" data-tooltip="Закон соответствия Царства мастера и Ранга рецепта:\n• Царство мастера = Ранг рецепта: 75% шанс успеха (при провале возвращается 50% редких ресурсов).\n• Царство мастера выше Ранга: 100% успех + 15% шанс Безупречного качества.\n• Рецепт на 1 ранг выше мастера: 25% шанс рискованного крафта и двойной опыт Ци (×2).\n• Рецепт на 2+ ранга выше: заблокировано.">Три Порога Мастерства (Царство мастера и Ранг рецепта)</span>' +
+              '<span class="text-2xs text-muted has-tooltip" data-tooltip-title="' + escapeHtml(t('threeThresholdsTooltipTitle')) + '" data-tooltip="' + escapeHtml(t('threeThresholdsTooltipBody')) + '">' + t('threeThresholdsLabel') + '</span>' +
             '</div>' +
             '<div class="scroll-area" style="display:flex;flex-direction:column;gap:6px">' +
               stationRecipes
-                .map(function (rec) {
+                .map(function (rawRec) {
+                  const rec = getRecipeInfo(rawRec);
                   const mastery = calculateCraftMastery(master, rec.tier);
                   const affordable = canAfford(rec.cost);
                   const canStart =
@@ -3788,9 +4117,7 @@
                   const timeSec = (
                     (rec.baseTimeSec || 2) / mastery.speedMultiplier
                   ).toFixed(1);
-                  const rareLabel =
-                    math.MATERIAL_NAMES[rec.rareMaterialKey] ||
-                    rec.rareMaterialKey;
+                  const rareLabel = getMatName(rec.rareMaterialKey);
 
                   let badgeClass = 'text-muted';
                   if (mastery.isBlocked) badgeClass = 'text-rose';
@@ -3803,36 +4130,35 @@
                       '<div style="flex:1;min-width:0">' +
                         '<div class="row-between">' +
                           '<span class="font-semibold text-bright text-xs truncate has-tooltip" data-tooltip-title="' +
-                            escapeHtml(rec.name) +
-                            ' (Ранг Т' +
-                            rec.tier +
-                            ')" data-tooltip="' +
+                            escapeHtml(rec.name + ' (T' + rec.tier + ')') +
+                            '" data-tooltip="' +
                             escapeHtml(rec.description) +
                             '">' +
                             escapeHtml(rec.name) +
-                            ' <span class="text-amber font-mono">[Ранг Т' +
-                            rec.tier +
+                            ' <span class="text-amber font-mono">[' +
+                            t('craftsRankBadge', { tier: rec.tier }) +
                             ']</span>' +
                           '</span>' +
                           '<span class="text-2xs font-mono has-tooltip ' +
                             badgeClass +
-                            '" data-tooltip-title="Порог Мастерства (Ранг Т' +
-                            rec.tier +
-                            ')" data-tooltip="' +
-                            escapeHtml(mastery.summaryText || '') +
+                            '" data-tooltip-title="' +
+                            escapeHtml(t('craftsMasteryTooltipTitle', { tier: rec.tier })) +
+                            '" data-tooltip="' +
+                            escapeHtml(mastery.thresholdLabel || '') +
                             '">' +
                             (mastery.isBlocked
-                              ? 'Заблокировано (0%)'
-                              : 'Шанс ' +
-                                mastery.chancePercent +
-                                '% · ' +
-                                timeSec +
-                                'с' +
+                              ? t('craftsBlockedZero')
+                              : t('craftsChanceTime', {
+                                  chance: mastery.chancePercent,
+                                  sec: timeSec,
+                                }) +
                                 (mastery.expMultiplier > 1
-                                  ? ' · Опыт ×' + mastery.expMultiplier
+                                  ? t('craftsExpMult', { mult: mastery.expMultiplier })
                                   : '') +
                                 (mastery.canFlawless
-                                  ? ' · Безупр. ' + mastery.flawlessChancePercent + '%'
+                                  ? t('craftsFlawlessPct', {
+                                      pct: mastery.flawlessChancePercent,
+                                    })
                                   : '')) +
                           '</span>' +
                         '</div>' +
@@ -3840,19 +4166,14 @@
                           escapeHtml(rec.description) +
                         '</div>' +
                         '<div class="text-2xs font-mono" style="margin-top:2px;color:#cbd5e1">' +
-                          'Цена: ' +
-                          rec.cost.spiritStones +
-                          ' камн. · ' +
-                          rec.cost.bogIron +
-                          ' жел. · ' +
-                          rec.cost.bloodMoss +
-                          ' мха · ' +
-                          rec.cost.spiderCarapace +
-                          ' панц. <span class="text-muted">(Редкий: ' +
-                          rareLabel +
-                          ' · Мирный опыт: +' +
-                          rec.baseExp * (mastery.expMultiplier || 1) +
-                          ')</span>' +
+                          t('craftsCostSummary', {
+                            stones: rec.cost.spiritStones,
+                            iron: rec.cost.bogIron,
+                            moss: rec.cost.bloodMoss,
+                            carapace: rec.cost.spiderCarapace,
+                            rare: rareLabel,
+                            exp: rec.baseExp * (mastery.expMultiplier || 1),
+                          }) +
                         '</div>' +
                       '</div>' +
                       '<button class="btn btn-sm ' +
@@ -3865,10 +4186,10 @@
                         (canStart ? '' : 'disabled') +
                       '>' +
                         (mastery.isBlocked
-                          ? 'Недоступно'
+                          ? t('craftsUnavailableBtn')
                           : activeCraft && activeCraft.recipeId === rec.id
-                          ? 'В работе...'
-                          : 'Создать') +
+                          ? t('craftsInProgressBtn')
+                          : t('craftsCreateBtn')) +
                       '</button>' +
                     '</div>'
                   );
@@ -3881,37 +4202,37 @@
             renderDiscipleSelectorBar(selectedDisciple) +
             (stationKey === 'CAULDRON'
               ? '<div class="row-between" style="flex-shrink:0">' +
-                  '<h3 style="font-size:14px">Запасы Эликсиров и Пилюль</h3>' +
-                  '<span class="text-2xs font-mono has-tooltip" data-tooltip-title="Запасы Алхимического Котла" data-tooltip="Пилюли Исцеления восстанавливают 60% Здоровья.\nОтвары Очищения снимают до 2 травм меридианов.\nПилюли Прорыва Основы дают +25% к шансу прорыва во II царство.">Исцел.: ' +
-                    state.consumables.healingPills +
-                    ' · Отвары: ' +
-                    state.consumables.injuryDecoctions +
-                    ' · Прорыв: ' +
-                    state.consumables.breakthroughPills +
+                  '<h3 style="font-size:14px">' + t('craftsElixirStockTitle') + '</h3>' +
+                  '<span class="text-2xs font-mono has-tooltip" data-tooltip-title="' + escapeHtml(t('craftsCauldronTooltipTitle')) + '" data-tooltip="' + escapeHtml(t('craftsCauldronTooltipBody')) + '">' +
+                    t('craftsElixirStockSummary', {
+                      heal: state.consumables.healingPills,
+                      decoction: state.consumables.injuryDecoctions,
+                      breakPill: state.consumables.breakthroughPills,
+                    }) +
                   '</span>' +
                 '</div>' +
                 '<div class="scroll-area" style="display:flex;flex-direction:column;gap:6px">' +
                   (selectedDisciple
                     ? '<div class="inner-box row-between text-xs">' +
-                        '<span>Быстрая медицина для <strong>' +
+                        '<span>' + t('craftsQuickMedFor') + ' <strong>' +
                           escapeHtml(selectedDisciple.name) +
                         '</strong></span>' +
                         '<div class="row-wrap">' +
                           '<button class="btn btn-sm btn-emerald" data-action="heal-disciple" data-id="' +
                             selectedDisciple.id +
-                            '" data-tooltip-title="Пилюля Исцеления Ци" data-tooltip="Мгновенно восстанавливает 60% от максимального здоровья выбранного ученика." ' +
+                            '" data-tooltip-title="' + escapeHtml(t('healingPillTooltipTitle')) + '" data-tooltip="' + escapeHtml(t('healingPillTooltipBody')) + '" ' +
                             (state.consumables.healingPills <= 0 ? 'disabled' : '') +
-                          '>+Здоровье (' +
+                          '>' + t('plusHpBtn') + ' (' +
                             state.consumables.healingPills +
                           ')</button>' +
                           '<button class="btn btn-sm btn-amber" data-action="cure-injury" data-id="' +
                             selectedDisciple.id +
-                            '" data-tooltip-title="Отвар Очищения Меридианов" data-tooltip="Снимает до 2 стаков стихийных травм и восстанавливает нормальное течение Ци." ' +
+                            '" data-tooltip-title="' + escapeHtml(t('injuryDecoctionTooltipTitle')) + '" data-tooltip="' + escapeHtml(t('injuryDecoctionTooltipBody')) + '" ' +
                             (state.consumables.injuryDecoctions <= 0 ||
                             selectedDisciple.injuries === 0
                               ? 'disabled'
                               : '') +
-                          '>-Травма (' +
+                          '>' + t('minusInjuryBtn') + ' (' +
                             state.consumables.injuryDecoctions +
                           ')</button>' +
                         '</div>' +
@@ -3920,7 +4241,7 @@
                   '<div class="grid-2">' +
                     Object.keys(math.STAT_PILL_LABELS)
                       .map(function (key) {
-                        const pillInfo = math.STAT_PILL_LABELS[key];
+                        const pillInfo = getPillInfo(key);
                         const stock = state.consumables.statPills[key] || 0;
                         const discSlot =
                           selectedDisciple && selectedDisciple.pillGrid[key];
@@ -3932,31 +4253,33 @@
                         return (
                           '<div class="inner-box row-between text-xs" data-tooltip-title="' +
                             escapeHtml(pillInfo.name) +
-                            '" data-tooltip="Постоянный эффект: ' +
-                            escapeHtml(pillInfo.bonusText) +
-                            ' к базовым характеристикам.\nНа складе: ' +
-                            stock +
-                            ' шт.' +
-                            (discSlot
-                              ? ' Усвоено учеником: ' +
-                                discSlot.consumed +
-                                '/' +
-                                discSlot.max +
-                                '.'
-                              : '') +
+                            '" data-tooltip="' +
+                            escapeHtml(
+                              t('craftsPillTooltip', {
+                                bonus: pillInfo.bonusText,
+                                stock: stock,
+                                consumed: discSlot
+                                  ? t('craftsPillConsumedSuffix', {
+                                      consumed: discSlot.consumed,
+                                      max: discSlot.max,
+                                    })
+                                  : '',
+                              })
+                            ) +
                             '">' +
                             '<div>' +
                               '<div class="font-semibold text-bright has-tooltip">' +
-                                pillInfo.shortStat +
+                                escapeHtml(pillInfo.shortStat) +
                                 ' <span class="text-amber font-mono">(' +
                                 stock +
-                                ' шт.)</span>' +
+                                ' ' + t('pcsShort') + ')</span>' +
                               '</div>' +
                               (discSlot
-                                ? '<div class="text-2xs text-muted font-mono">Усвоено: ' +
-                                  discSlot.consumed +
-                                  '/' +
-                                  discSlot.max +
+                                ? '<div class="text-2xs text-muted font-mono">' +
+                                  t('absorbedCount', {
+                                    consumed: discSlot.consumed,
+                                    max: discSlot.max,
+                                  }) +
                                   '</div>'
                                 : '') +
                             '</div>' +
@@ -3967,7 +4290,7 @@
                                 key +
                                 '" ' +
                                 (canFeed ? '' : 'disabled') +
-                                '>Принять</button>'
+                                '>' + t('takeBtn') + '</button>'
                               : '') +
                           '</div>'
                         );
@@ -3976,18 +4299,20 @@
                   '</div>' +
                 '</div>'
               : '<div class="row-between" style="flex-shrink:0">' +
-                  '<h3 style="font-size:14px">Арсенал Склада (' +
-                    state.warehouseGear.length +
-                  ')</h3>' +
+                  '<h3 style="font-size:14px">' +
+                    t('craftsWarehouseArsenalTitle', {
+                      count: state.warehouseGear.length,
+                    }) +
+                  '</h3>' +
                   (selectedDisciple
-                    ? '<span class="text-2xs text-muted">Экипировать: ' +
-                      escapeHtml(selectedDisciple.name) +
+                    ? '<span class="text-2xs text-muted">' +
+                      t('craftsEquipLabel', { name: selectedDisciple.name }) +
                       '</span>'
                     : '') +
                 '</div>' +
                 '<div class="scroll-area" style="display:flex;flex-direction:column;gap:6px">' +
                   (state.warehouseGear.length === 0
-                    ? '<div class="text-xs text-dim" style="text-align:center;padding:24px">На складе нет свободного снаряжения. Назначьте мастера павильона или запустите ремесло Т1 слева.</div>'
+                    ? '<div class="text-xs text-dim" style="text-align:center;padding:24px">' + t('craftsEmptyWarehouseMsg') + '</div>'
                     : state.warehouseGear
                         .map(function (item) {
                           return (
@@ -3996,13 +4321,13 @@
                                 '<div class="font-semibold ' +
                                   (item.isFlawless ? 'text-amber' : 'text-bright') +
                                   ' truncate">' +
-                                  escapeHtml(item.name) +
-                                  ' <span class="text-2xs text-muted font-mono">[Т' +
+                                  escapeHtml(getGearDisplayName(item)) +
+                                  ' <span class="text-2xs text-muted font-mono">[T' +
                                   (item.tier || 1) +
                                   ']</span>' +
                                 '</div>' +
                                 '<div class="text-2xs text-muted truncate">' +
-                                  escapeHtml(item.description) +
+                                  escapeHtml(getGearDisplayDesc(item)) +
                                 '</div>' +
                               '</div>' +
                               (selectedDisciple
@@ -4010,7 +4335,7 @@
                                   selectedDisciple.id +
                                   '" data-gear="' +
                                   item.id +
-                                  '">Надеть</button>'
+                                  '">' + t('equipBtn') + '</button>'
                                 : '') +
                             '</div>'
                           );
@@ -4037,13 +4362,13 @@
       return (
         '<section class="card flex-col-fill">' +
           '<div class="row-between" style="flex-shrink:0">' +
-            '<h2 style="font-size:16px">Летопись Событий Секты</h2>' +
+            '<h2 style="font-size:16px">' + t('chrSectEventsTitle') + '</h2>' +
             '<div class="row-wrap">' +
               '<button class="btn btn-sm ' +
                 (state.chronicleFilter === 'ALL' ? 'btn-amber' : '') +
-                '" data-action="filter-chronicle" data-cat="ALL">Все (' +
-                state.chronicle.length +
-              ')</button>' +
+                '" data-action="filter-chronicle" data-cat="ALL">' +
+                t('chrAllFilter', { count: state.chronicle.length }) +
+              '</button>' +
               cats
                 .map(function (cat) {
                   return (
@@ -4052,7 +4377,7 @@
                     '" data-action="filter-chronicle" data-cat="' +
                     cat +
                     '">' +
-                    math.CHRONICLE_CATEGORY_LABELS[cat] +
+                    t('chrCat_' + cat) +
                     '</button>'
                   );
                 })
@@ -4066,8 +4391,7 @@
                   '<div class="inner-box text-xs">' +
                     '<div class="row-between text-2xs text-muted">' +
                       '<span>' +
-                        (math.CHRONICLE_CATEGORY_LABELS[entry.category] ||
-                          entry.category) +
+                        escapeHtml(t('chrCat_' + entry.category)) +
                       '</span>' +
                       '<span class="font-mono">' + entry.time + '</span>' +
                     '</div>' +
@@ -4089,12 +4413,12 @@
     // MEMORIAL
     return (
       '<section class="card flex-col-fill">' +
-        '<h2 style="font-size:16px;flex-shrink:0" class="text-rose">Зал Предков · Павшие в Карстовом Разломе (' +
-          state.fallenMemorial.length +
-        ')</h2>' +
+        '<h2 style="font-size:16px;flex-shrink:0" class="text-rose">' +
+          t('chrMemorialTitle', { count: state.fallenMemorial.length }) +
+        '</h2>' +
         '<div class="scroll-area" style="display:flex;flex-direction:column;gap:6px">' +
           (state.fallenMemorial.length === 0
-            ? '<div class="text-xs text-dim" style="text-align:center;padding:32px">Ни один ученик ещё не пал в бою.</div>'
+            ? '<div class="text-xs text-dim" style="text-align:center;padding:32px">' + t('chrNoFallenMsg') + '</div>'
             : state.fallenMemorial
                 .map(function (f) {
                   return (
@@ -4116,8 +4440,12 @@
                         escapeHtml(f.causeOfDeath) +
                       '</div>' +
                       (f.recoveredGearNames && f.recoveredGearNames.length > 0
-                        ? '<div class="text-2xs text-emerald" style="margin-top:2px">Спасено соратниками: ' +
-                          escapeHtml(f.recoveredGearNames.join(', ')) +
+                        ? '<div class="text-2xs text-emerald" style="margin-top:2px">' +
+                          escapeHtml(
+                            t('chrRecoveredByComrades', {
+                              items: f.recoveredGearNames.join(', '),
+                            })
+                          ) +
                           '</div>'
                         : '') +
                     '</div>'
@@ -4148,35 +4476,35 @@
       '<div class="modal-backdrop">' +
         '<div class="modal-panel">' +
           '<div>' +
-            '<div class="text-xs text-amber">Пик Закалки Тела (5-я ступень) → Возведение Основы (II царство)</div>' +
-            '<h3 style="font-size:18px;margin-top:2px">Выбор Боевого Пути: ' +
-              escapeHtml(disc.name) +
+            '<div class="text-xs text-amber">' + t('breakModalSubheader') + '</div>' +
+            '<h3 style="font-size:18px;margin-top:2px">' +
+              escapeHtml(t('breakModalTitle', { name: disc.name })) +
             '</h3>' +
           '</div>' +
           (res.hasEnvPenalty
-            ? '<div class="inner-box text-xs text-rose" style="border-color:rgba(244,63,94,0.4)">Ограничение среды: Обитель находится на I ступени («Забытая Нора»), шанс снижен на -35%.</div>'
+            ? '<div class="inner-box text-xs text-rose" style="border-color:rgba(244,63,94,0.4)">' + t('breakModalEnvPenalty') + '</div>'
             : '') +
           '<div style="display:flex;flex-direction:column;gap:6px">' +
             archetypes
               .map(function (archKey) {
-                const info = math.ARCHETYPE_INFO[archKey];
+                const info = getArchInfo(archKey);
                 const selected = state.selectedT2Archetype === archKey;
                 return (
                   '<button class="inner-box" style="text-align:left;cursor:pointer;' +
                   (selected ? 'border-color:var(--accent-amber);background:#1a2436' : '') +
                   '" data-action="select-t2-arch" data-arch="' +
                   archKey +
-                  '" data-tooltip-title="Боевой Путь: ' +
-                  escapeHtml(info.name) +
+                  '" data-tooltip-title="' +
+                  escapeHtml(t('combatPathTooltipTitle', { name: info.name })) +
                   '" data-tooltip="' +
                   escapeHtml(formatArchetypeTooltip(archKey)) +
                   '">' +
                     '<div class="row-between text-xs font-semibold text-bright">' +
-                      '<span>' + info.name + '</span>' +
-                      '<span class="text-amber">' + info.role + '</span>' +
+                      '<span>' + escapeHtml(info.name) + '</span>' +
+                      '<span class="text-amber">' + escapeHtml(info.role) + '</span>' +
                     '</div>' +
                     '<div class="text-2xs text-muted" style="margin-top:3px">' +
-                      info.description +
+                      escapeHtml(info.description) +
                     '</div>' +
                     '<div class="text-2xs text-emerald" style="margin-top:2px">' +
                       escapeHtml(formatArchetypeBonusText(archKey)) +
@@ -4186,28 +4514,28 @@
               })
               .join('') +
           '</div>' +
-          '<button class="inner-box row-between text-xs" style="cursor:pointer" data-action="toggle-break-pill" data-tooltip-title="Пилюля Прорыва Основы" data-tooltip="Концентрированный эликсир духовных трав. Повышает шанс успешного возвышения во II царство на +25% и снижает риск отката Ци при провале." ' +
+          '<button class="inner-box row-between text-xs" style="cursor:pointer" data-action="toggle-break-pill" data-tooltip-title="' + escapeHtml(t('breakPillTooltipTitle')) + '" data-tooltip="' + escapeHtml(t('breakPillTooltipBody')) + '" ' +
           (state.consumables.breakthroughPills <= 0 ? 'disabled' : '') +
           '>' +
-            '<span class="has-tooltip">Использовать Пилюлю Прорыва Основы (+25% к шансу, запас: ' +
-              state.consumables.breakthroughPills +
-            ')</span>' +
+            '<span class="has-tooltip">' +
+              t('breakUsePillLabel', { count: state.consumables.breakthroughPills }) +
+            '</span>' +
             '<strong class="text-amber">' +
               (state.usePillOnBreakthrough &&
               state.consumables.breakthroughPills > 0
-                ? 'Да'
-                : 'Нет') +
+                ? t('yesLabel')
+                : t('noLabel')) +
             '</strong>' +
           '</button>' +
           '<div class="row-between font-mono text-xs">' +
-            '<span class="text-muted">Итоговый шанс возвышения:</span>' +
+            '<span class="text-muted">' + t('breakFinalChanceLabel') + '</span>' +
             '<strong class="text-amber" style="font-size:15px">' +
               res.chancePercent +
             '%</strong>' +
           '</div>' +
           '<div class="row-wrap">' +
-            '<button class="btn" style="flex:1" data-action="close-break-modal">Отмена</button>' +
-            '<button class="btn btn-amber" style="flex:1" data-action="confirm-breakthrough">Начать Прорыв</button>' +
+            '<button class="btn" style="flex:1" data-action="close-break-modal">' + t('cancelBtn') + '</button>' +
+            '<button class="btn btn-amber" style="flex:1" data-action="confirm-breakthrough">' + t('startBreakthroughBtn') + '</button>' +
           '</div>' +
         '</div>' +
       '</div>'
@@ -4229,12 +4557,14 @@
     const ready = disc.exp >= disc.maxExp;
     const statusLabel =
       disc.status === 'EXPEDITION'
-        ? 'В походе (Разлом)'
+        ? t('statusInExpeditionFull')
         : disc.status === 'PAVILION_DUTY' &&
           disc.assignedStation &&
           math.CRAFT_STATIONS[disc.assignedStation]
-        ? 'Мастер павильона: ' + math.CRAFT_STATIONS[disc.assignedStation].name
-        : 'Отдых в обители';
+        ? t('statusPavilionMasterFull', {
+            station: getStationInfo(disc.assignedStation).name,
+          })
+        : t('statusResting');
 
     const unit = disc;
     const daoState = math.getDaoHeartState(unit);
@@ -4243,6 +4573,10 @@
       0,
       Math.min(100, (unit.daoHeart + 100) / 2)
     );
+    const archInfo = getArchInfo(disc.archetype);
+    const tempInfo = getTempInfo(disc.temperament);
+    const rootInfo = getRootInfo(disc.spiritRoot);
+    const constInfo = getConstInfo(disc.constitution);
 
     return (
       '<div class="modal-backdrop" data-backdrop="disciple-card">' +
@@ -4252,78 +4586,73 @@
               '<h3 style="font-size:18px;word-break:break-word">' +
                 escapeHtml(disc.name) +
                 ' <span class="text-xs text-amber" style="font-weight:400">· ' +
-                  math.getRealmLabel(disc.realmTier, disc.subLevel) +
+                  escapeHtml(math.getRealmLabel(disc.realmTier, disc.subLevel)) +
                 '</span>' +
               '</h3>' +
               '<div class="text-2xs text-muted" style="margin-top:2px;word-break:break-word">' +
-                '<span class="has-tooltip" data-tooltip-title="Боевой Путь: ' +
-                  escapeHtml(math.ARCHETYPE_INFO[disc.archetype].name) +
+                '<span class="has-tooltip" data-tooltip-title="' +
+                  escapeHtml(t('combatPathTooltipTitle', { name: archInfo.name })) +
                   '" data-tooltip="' +
                   escapeHtml(formatArchetypeTooltip(disc.archetype)) +
                   '">' +
-                  escapeHtml(math.ARCHETYPE_INFO[disc.archetype].name) +
+                  escapeHtml(archInfo.name) +
                 '</span>' +
                 ' · ' +
-                (disc.gender === 'YANG' ? 'Начало Ян' : 'Начало Инь') +
-                ' · <span class="has-tooltip" data-tooltip-title="Личная мошна (90/10)" data-tooltip="Ученик удерживает 10% от добытых в походе Камней Духа в личную мошну, а 90% передаёт в казну Обители.">Мошна: ' +
-                disc.personalStones +
-                ' камн.</span> · Статус: <strong class="text-bright">' +
+                (disc.gender === 'YANG' ? t('genderYangFull') : t('genderYinFull')) +
+                ' · <span class="has-tooltip" data-tooltip-title="' + escapeHtml(t('personalPurseTooltipTitle')) + '" data-tooltip="' + escapeHtml(t('personalPurseTooltipBody')) + '">' +
+                t('purseStonesShort', { stones: disc.personalStones }) +
+                '</span> · ' + t('statusLabel') + ' <strong class="text-bright">' +
                 escapeHtml(statusLabel) +
                 '</strong>' +
               '</div>' +
             '</div>' +
-            '<button class="btn btn-sm" data-action="close-disciple-card">Закрыть ✕</button>' +
+            '<button class="btn btn-sm" data-action="close-disciple-card">' + t('closeModalBtn') + '</button>' +
           '</div>' +
-          // Блок врождённых качеств (Корень, Конституция, Характер) и биполярная шкала «Весы Сердца Дао» строго без числовых множителей
           '<div class="inner-box" style="flex-shrink:0;display:flex;flex-direction:column;gap:8px">' +
-            '<div class="text-2xs text-muted font-semibold" style="border-bottom:1px solid var(--border-subtle);padding-bottom:4px">Врождённая природа и Весы Сердца Дао</div>' +
+            '<div class="text-2xs text-muted font-semibold" style="border-bottom:1px solid var(--border-subtle);padding-bottom:4px">' + t('innateNatureAndDaoTitle') + '</div>' +
             '<div class="grid-3-cols text-xs" style="gap:8px">' +
-              '<div style="word-break:break-word" data-tooltip-title="Духовный корень: ' +
-                escapeHtml(disc.spiritRoot.name) +
+              '<div style="word-break:break-word" data-tooltip-title="' +
+                escapeHtml(t('spiritRootTooltipTitle', { name: rootInfo.name })) +
                 '" data-tooltip="' +
-                escapeHtml((disc.spiritRoot && disc.spiritRoot.description) || '') +
+                escapeHtml(rootInfo.description || '') +
                 '">' +
-                '<div class="text-2xs text-muted has-tooltip">Духовный корень</div>' +
+                '<div class="text-2xs text-muted has-tooltip">' + t('spiritRootLabel') + '</div>' +
                 '<strong class="' +
                   (disc.spiritRoot && disc.spiritRoot.isDarkRoot
                     ? 'text-demonic'
                     : 'text-bright') +
                   '">' +
-                  escapeHtml(disc.spiritRoot.name) +
+                  escapeHtml(rootInfo.name) +
                 '</strong>' +
               '</div>' +
-              '<div style="word-break:break-word" data-tooltip-title="Конституция тела: ' +
-                escapeHtml(disc.constitution.name) +
+              '<div style="word-break:break-word" data-tooltip-title="' +
+                escapeHtml(t('constitutionTooltipTitle', { name: constInfo.name })) +
                 '" data-tooltip="' +
-                escapeHtml((disc.constitution && disc.constitution.description) || '') +
+                escapeHtml(constInfo.description || '') +
                 '">' +
-                '<div class="text-2xs text-muted has-tooltip">Конституция тела</div>' +
+                '<div class="text-2xs text-muted has-tooltip">' + t('constitutionLabel') + '</div>' +
                 '<strong class="text-bright">' +
-                  escapeHtml(disc.constitution.name) +
+                  escapeHtml(constInfo.name) +
                 '</strong>' +
               '</div>' +
-              '<div style="word-break:break-word" data-tooltip-title="Характер: ' +
-                escapeHtml(math.TEMPERAMENT_INFO[disc.temperament].name) +
+              '<div style="word-break:break-word" data-tooltip-title="' +
+                escapeHtml(t('temperamentTooltipTitle', { name: tempInfo.name })) +
                 '" data-tooltip="' +
-                escapeHtml(
-                  (math.TEMPERAMENT_INFO[disc.temperament] &&
-                    math.TEMPERAMENT_INFO[disc.temperament].summary) ||
-                    ''
-                ) +
+                escapeHtml(tempInfo.summary || '') +
                 '">' +
-                '<div class="text-2xs text-muted has-tooltip">Характер</div>' +
+                '<div class="text-2xs text-muted has-tooltip">' + t('temperamentLabel') + '</div>' +
                 '<strong class="text-bright">' +
-                  escapeHtml(math.TEMPERAMENT_INFO[disc.temperament].name) +
+                  escapeHtml(tempInfo.name) +
                 '</strong>' +
               '</div>' +
             '</div>' +
-            '<div style="border-top:1px solid var(--border-subtle);padding-top:6px;display:flex;flex-direction:column;gap:4px" data-tooltip-title="Сердце Дао: ' +
-              escapeHtml(daoLabel) +
+            '<div style="border-top:1px solid var(--border-subtle);padding-top:6px;display:flex;flex-direction:column;gap:4px" data-tooltip-title="' +
+              escapeHtml(t('daoHeartTooltipTitle', { label: daoLabel })) +
               '" data-tooltip="' +
               escapeHtml(formatDaoHeartTooltip(unit.daoHeart, daoState)) +
               '">' +
               '<div class="row-between text-xs">' +
-                '<span class="text-muted font-semibold has-tooltip">Сердце Дао:</span>' +
+                '<span class="text-muted font-semibold has-tooltip">' + t('daoHeartLabel') + '</span>' +
                 '<strong class="' +
                   daoState.colorClass +
                   '">' +
@@ -4337,9 +4666,9 @@
                   '%"></div>' +
               '</div>' +
               '<div class="row-between text-2xs text-muted">' +
-                '<span class="text-rose">Бездна Демона</span>' +
-                '<span>Равновесие</span>' +
-                '<span class="text-amber">Свет Небес</span>' +
+                '<span class="text-rose">' + t('daoAbyssDemon') + '</span>' +
+                '<span>' + t('daoBalance') + '</span>' +
+                '<span class="text-amber">' + t('daoLightHeavens') + '</span>' +
               '</div>' +
               '<div class="text-2xs ' +
                 daoState.colorClass +
@@ -4348,61 +4677,60 @@
               '</div>' +
             '</div>' +
           '</div>' +
-          // Блок общих боевых характеристик ученика (8 параметров)
           '<div style="flex-shrink:0;display:flex;flex-direction:column;gap:6px">' +
             '<div class="row-between text-2xs text-muted">' +
-              '<span class="font-semibold">Общие характеристики ученика (Итоговые / Базовые)</span>' +
-              '<span class="font-mono"><span class="text-cyan">Щит Ци: ' +
+              '<span class="font-semibold">' + t('overallStatsTitle') + '</span>' +
+              '<span class="font-mono"><span class="text-cyan">' + t('qiShieldLabel') + ': ' +
                 eff.qiShield +
                 '/' +
                 eff.maxQiShield +
-                '</span> · Опыт Ци: ' +
+                '</span> · ' + t('qiExpLabel') + ': ' +
                 disc.exp +
                 '/' +
                 disc.maxExp +
               '</span>' +
             '</div>' +
             '<div class="grid-4-cols font-mono" style="text-align:center">' +
-              '<div class="inner-box" style="padding:6px 8px" data-tooltip-title="Здоровье и Личный Щит Ци" data-tooltip="Здоровье определяет живучесть ученика. Личный Щит Ци (в скобках) поглощает урон первым в каждой схватке и полностью восстанавливается между волнами врагов."><div class="text-2xs text-muted has-tooltip">Здоровье / Щит Ци</div><div class="text-emerald font-semibold">' +
+              '<div class="inner-box" style="padding:6px 8px" data-tooltip-title="' + escapeHtml(t('statHpShieldTooltipTitle')) + '" data-tooltip="' + escapeHtml(t('statHpShieldTooltipBody')) + '"><div class="text-2xs text-muted has-tooltip">' + t('statHpShieldLabel') + '</div><div class="text-emerald font-semibold">' +
                 eff.hp +
                 '/' +
                 eff.maxHp +
                 ' <span class="text-cyan">(' +
                 eff.qiShield +
                 ')</span></div></div>' +
-              '<div class="inner-box" style="padding:6px 8px" data-tooltip-title="Физическая атака" data-tooltip="Сила ударов оружием и техниками тела. Основной атакующий параметр Послушников, Мечников и Стражей."><div class="text-2xs text-muted has-tooltip">Физ. атака (база ' +
-                disc.stats.pAtk +
-                ')</div><div class="text-bright font-semibold">' +
+              '<div class="inner-box" style="padding:6px 8px" data-tooltip-title="' + escapeHtml(t('statPAtkTooltipTitle')) + '" data-tooltip="' + escapeHtml(t('statPAtkTooltipBody')) + '"><div class="text-2xs text-muted has-tooltip">' +
+                t('statPAtkBase', { base: disc.stats.pAtk }) +
+                '</div><div class="text-bright font-semibold">' +
                 eff.pAtk +
               '</div></div>' +
-              '<div class="inner-box" style="padding:6px 8px" data-tooltip-title="Магическая (Духовная) атака" data-tooltip="Мощь заклинаний и печатей Ци. Основной атакующий параметр Адептов Тайного Пламени, пробивающий физическую броню врагов."><div class="text-2xs text-muted has-tooltip">Маг. атака (база ' +
-                disc.stats.mAtk +
-                ')</div><div class="text-bright font-semibold">' +
+              '<div class="inner-box" style="padding:6px 8px" data-tooltip-title="' + escapeHtml(t('statMAtkTooltipTitle')) + '" data-tooltip="' + escapeHtml(t('statMAtkTooltipBody')) + '"><div class="text-2xs text-muted has-tooltip">' +
+                t('statMAtkBase', { base: disc.stats.mAtk }) +
+                '</div><div class="text-bright font-semibold">' +
                 eff.mAtk +
               '</div></div>' +
-              '<div class="inner-box" style="padding:6px 8px" data-tooltip-title="Физическая защита" data-tooltip="Снижает входящий физический урон от когтей, клыков и клинков тварей Разлома по гиперболической формуле брони."><div class="text-2xs text-muted has-tooltip">Физ. защита (база ' +
-                disc.stats.pDef +
-                ')</div><div class="text-bright font-semibold">' +
+              '<div class="inner-box" style="padding:6px 8px" data-tooltip-title="' + escapeHtml(t('statPDefTooltipTitle')) + '" data-tooltip="' + escapeHtml(t('statPDefTooltipBody')) + '"><div class="text-2xs text-muted has-tooltip">' +
+                t('statPDefBase', { base: disc.stats.pDef }) +
+                '</div><div class="text-bright font-semibold">' +
                 eff.pDef +
               '</div></div>' +
-              '<div class="inner-box" style="padding:6px 8px" data-tooltip-title="Магическая защита" data-tooltip="Защищает меридианы от духовных атак, ядовитых миазмов и проклятий тварей Разлома."><div class="text-2xs text-muted has-tooltip">Маг. защита (база ' +
-                disc.stats.mDef +
-                ')</div><div class="text-bright font-semibold">' +
+              '<div class="inner-box" style="padding:6px 8px" data-tooltip-title="' + escapeHtml(t('statMDefTooltipTitle')) + '" data-tooltip="' + escapeHtml(t('statMDefTooltipBody')) + '"><div class="text-2xs text-muted has-tooltip">' +
+                t('statMDefBase', { base: disc.stats.mDef }) +
+                '</div><div class="text-bright font-semibold">' +
                 eff.mDef +
               '</div></div>' +
-              '<div class="inner-box" style="padding:6px 8px" data-tooltip-title="Скорость боя" data-tooltip="Определяет очерёдность хода в раунде схватки. Бойцы с высокой скоростью наносят удар раньше врагов."><div class="text-2xs text-muted has-tooltip">Скорость (база ' +
-                disc.stats.spd +
-                ')</div><div class="text-bright font-semibold">' +
+              '<div class="inner-box" style="padding:6px 8px" data-tooltip-title="' + escapeHtml(t('statSpdTooltipTitle')) + '" data-tooltip="' + escapeHtml(t('statSpdTooltipBody')) + '"><div class="text-2xs text-muted has-tooltip">' +
+                t('statSpdBase', { base: disc.stats.spd }) +
+                '</div><div class="text-bright font-semibold">' +
                 eff.spd +
               '</div></div>' +
-              '<div class="inner-box" style="padding:6px 8px" data-tooltip-title="Шанс критического удара" data-tooltip="Вероятность нанести сокрушительный удар с полуторакратным (×1.5) уроном."><div class="text-2xs text-muted has-tooltip">Шанс крита (база ' +
-                disc.stats.crit +
-                '%)</div><div class="text-amber font-semibold">' +
+              '<div class="inner-box" style="padding:6px 8px" data-tooltip-title="' + escapeHtml(t('statCritTooltipTitle')) + '" data-tooltip="' + escapeHtml(t('statCritTooltipBody')) + '"><div class="text-2xs text-muted has-tooltip">' +
+                t('statCritBase', { base: disc.stats.crit }) +
+                '</div><div class="text-amber font-semibold">' +
                 eff.crit +
               '%</div></div>' +
-              '<div class="inner-box" style="padding:6px 8px" data-tooltip-title="Уклонение" data-tooltip="Вероятность полностью избежать вражеского удара без потери Щита Ци и Здоровья (максимум до 65%)."><div class="text-2xs text-muted has-tooltip">Уклонение (база ' +
-                disc.stats.eva +
-                '%)</div><div class="text-emerald font-semibold">' +
+              '<div class="inner-box" style="padding:6px 8px" data-tooltip-title="' + escapeHtml(t('statEvaTooltipTitle')) + '" data-tooltip="' + escapeHtml(t('statEvaTooltipBody')) + '"><div class="text-2xs text-muted has-tooltip">' +
+                t('statEvaBase', { base: disc.stats.eva }) +
+                '</div><div class="text-emerald font-semibold">' +
                 eff.eva +
               '%</div></div>' +
             '</div>' +
@@ -4410,36 +4738,37 @@
           '<div class="row-wrap">' +
             '<button class="btn btn-sm" style="flex:1" data-action="heal-disciple" data-id="' +
               disc.id +
-              '" data-tooltip-title="Пилюля Исцеления Ци" data-tooltip="Мгновенно восстанавливает 60% от максимального здоровья ученика. Снимает последствия боевых ранений." ' +
+              '" data-tooltip-title="' + escapeHtml(t('healingPillTooltipTitle')) + '" data-tooltip="' + escapeHtml(t('healingPillTooltipBody')) + '" ' +
               (state.consumables.healingPills <= 0 || eff.hp >= eff.maxHp
                 ? 'disabled'
                 : '') +
-            '>Пилюля Исцеления (' +
-              state.consumables.healingPills +
-            ')</button>' +
+            '>' +
+              t('healingPillBtnCount', { count: state.consumables.healingPills }) +
+            '</button>' +
             '<button class="btn btn-sm" style="flex:1" data-action="cure-injury" data-id="' +
               disc.id +
-              '" data-tooltip-title="Отвар Очищения Меридианов" data-tooltip="Снимает до 2 стаков внутренних травм меридианов. При 5/5 травмах естественное исцеление заблокировано до приёма отвара." ' +
+              '" data-tooltip-title="' + escapeHtml(t('injuryDecoctionTooltipTitle')) + '" data-tooltip="' + escapeHtml(t('injuryDecoctionTooltipBody')) + '" ' +
               (state.consumables.injuryDecoctions <= 0 || disc.injuries === 0
                 ? 'disabled'
                 : '') +
-            '>Отвар Очищения (' +
-              state.consumables.injuryDecoctions +
-            ') · Травмы: ' +
-              disc.injuries +
-            '/5</button>' +
+            '>' +
+              t('injuryDecoctionBtnCount', {
+                count: state.consumables.injuryDecoctions,
+                injuries: disc.injuries,
+              }) +
+            '</button>' +
             (ready
               ? '<button class="btn btn-sm btn-amber" data-action="breakthrough" data-id="' +
                 disc.id +
-                '" data-tooltip-title="Возвышение Ступени Ци" data-tooltip="Начать попытку прорыва на следующую ступень культивации.">Совершить Прорыв!</button>'
+                '" data-tooltip-title="' + escapeHtml(t('breakthroughTooltipTitle')) + '" data-tooltip="' + escapeHtml(t('breakthroughTooltipBody')) + '">' + t('performBreakthroughBtn') + '</button>'
               : '') +
           '</div>' +
           '<div class="grid-2 divider-top">' +
             '<div class="inner-box" style="display:flex;flex-direction:column;justify-content:space-between;gap:8px">' +
               '<div>' +
                 '<div class="row-between" style="margin-bottom:6px">' +
-                  '<span class="text-xs font-semibold text-bright">Потенциал пилюль (6 видов)</span>' +
-                  '<span class="text-2xs text-muted">Усвоено / Лимит</span>' +
+                  '<span class="text-xs font-semibold text-bright">' + t('pillPotentialTitle') + '</span>' +
+                  '<span class="text-2xs text-muted">' + t('absorbedLimitLabel') + '</span>' +
                 '</div>' +
                 '<div class="grid-3-cols">' +
                   statKeys
@@ -4447,7 +4776,7 @@
                       const slot = disc.pillGrid[key];
                       const inStock = state.consumables.statPills[key] || 0;
                       const isFull = slot.consumed >= slot.max;
-                      const pillMeta = math.STAT_PILL_LABELS[key];
+                      const pillMeta = getPillInfo(key);
                       return (
                         '<button class="inner-box" style="text-align:left;cursor:pointer;padding:6px 8px" data-action="feed-stat-pill" data-id="' +
                         disc.id +
@@ -4457,19 +4786,18 @@
                         escapeHtml(pillMeta.name) +
                         '" data-tooltip="' +
                         escapeHtml(
-                          pillMeta.bonusText +
-                            '. Лимит усвоения зависит от Конституции тела ученика (' +
-                            slot.consumed +
-                            ' из ' +
-                            slot.max +
-                            ').'
+                          t('pillSlotTooltipBody', {
+                            bonus: pillMeta.bonusText,
+                            consumed: slot.consumed,
+                            max: slot.max,
+                          })
                         ) +
                         '" ' +
                         (isFull || inStock <= 0 ? 'disabled' : '') +
                         '>' +
                           '<div class="row-between text-2xs">' +
                             '<span class="font-semibold text-bright">' +
-                              pillMeta.shortStat +
+                              escapeHtml(pillMeta.shortStat) +
                             '</span>' +
                             '<span class="text-amber font-mono">' +
                               slot.consumed +
@@ -4477,9 +4805,9 @@
                               slot.max +
                             '</span>' +
                           '</div>' +
-                          '<div class="text-2xs text-muted" style="margin-top:2px">Склад: ' +
-                            inStock +
-                          ' шт.</div>' +
+                          '<div class="text-2xs text-muted" style="margin-top:2px">' +
+                            t('stockCountPcs', { count: inStock }) +
+                          '</div>' +
                         '</button>'
                       );
                     })
@@ -4487,67 +4815,67 @@
                 '</div>' +
               '</div>' +
               '<div class="row-between text-2xs text-muted">' +
-                '<span>Нажмите на ячейку для приёма</span>' +
-                '<button class="btn btn-sm" data-action="goto-crafts-potential">К Алхимику →</button>' +
+                '<span>' + t('clickCellToTakePill') + '</span>' +
+                '<button class="btn btn-sm" data-action="goto-crafts-potential">' + t('toAlchemistBtn') + '</button>' +
               '</div>' +
             '</div>' +
             '<div class="inner-box" style="display:flex;flex-direction:column;justify-content:space-between;gap:8px">' +
               '<div>' +
                 '<div class="row-between" style="margin-bottom:6px">' +
-                  '<span class="text-xs font-semibold text-bright">Слоты экипировки</span>' +
-                  '<span class="text-2xs text-muted">Свободно на складе: ' +
-                    state.warehouseGear.length +
+                  '<span class="text-xs font-semibold text-bright">' + t('equipmentSlotsTitle') + '</span>' +
+                  '<span class="text-2xs text-muted">' +
+                    t('freeInWarehouseCount', { count: state.warehouseGear.length }) +
                   '</span>' +
                 '</div>' +
                 '<div class="grid-2x2 text-xs" style="margin-bottom:6px">' +
                   '<div class="inner-box" style="padding:6px 8px">' +
                     '<div class="row-between text-2xs text-muted">' +
-                      '<span>Оружие</span>' +
+                      '<span>' + t('weaponLabel') + '</span>' +
                       (disc.equippedWeapon
                         ? '<button class="btn btn-sm" style="padding:1px 6px;min-height:20px;font-size:10px" data-action="unequip-gear" data-id="' +
                           disc.id +
-                          '" data-slot="WEAPON">Снять</button>'
+                          '" data-slot="WEAPON">' + t('unequipBtn') + '</button>'
                         : '') +
                     '</div>' +
                     '<div class="font-semibold text-bright truncate" style="margin-top:2px">' +
                       escapeHtml(
-                        (disc.equippedWeapon && disc.equippedWeapon.name) ||
-                          'Не надето'
+                        (disc.equippedWeapon && getGearDisplayName(disc.equippedWeapon)) ||
+                          t('notEquippedLabel')
                       ) +
                     '</div>' +
                   '</div>' +
                   '<div class="inner-box" style="padding:6px 8px">' +
                     '<div class="row-between text-2xs text-muted">' +
-                      '<span>Доспех</span>' +
+                      '<span>' + t('armorLabel') + '</span>' +
                       (disc.equippedArmor
                         ? '<button class="btn btn-sm" style="padding:1px 6px;min-height:20px;font-size:10px" data-action="unequip-gear" data-id="' +
                           disc.id +
-                          '" data-slot="ARMOR">Снять</button>'
+                          '" data-slot="ARMOR">' + t('unequipBtn') + '</button>'
                         : '') +
                     '</div>' +
                     '<div class="font-semibold text-bright truncate" style="margin-top:2px">' +
                       escapeHtml(
-                        (disc.equippedArmor && disc.equippedArmor.name) ||
-                          'Не надето'
+                        (disc.equippedArmor && getGearDisplayName(disc.equippedArmor)) ||
+                          t('notEquippedLabel')
                       ) +
                     '</div>' +
                   '</div>' +
                 '</div>' +
                 '<div class="scroll-area" style="max-height:84px">' +
                   (state.warehouseGear.length === 0
-                    ? '<div class="text-2xs text-dim">На складе нет свободного оружия или доспехов.</div>'
+                    ? '<div class="text-2xs text-dim">' + t('noFreeGearInWarehouse') + '</div>'
                     : state.warehouseGear
                         .map(function (g) {
                           return (
                             '<div class="inner-box row-between text-2xs" style="margin-bottom:4px;padding:5px 8px">' +
                               '<span class="truncate">' +
-                                escapeHtml(g.name) +
+                                escapeHtml(getGearDisplayName(g)) +
                               '</span>' +
                               '<button class="btn btn-sm btn-amber" style="padding:2px 8px;min-height:22px" data-action="equip-gear" data-id="' +
                                 disc.id +
                                 '" data-gear="' +
                                 g.id +
-                                '">Надеть</button>' +
+                                '">' + t('equipBtn') + '</button>' +
                             '</div>'
                           );
                         })
@@ -4555,10 +4883,60 @@
                 '</div>' +
               '</div>' +
               '<div class="row-between text-2xs text-muted">' +
-                '<span>При гибели возвращается соратниками</span>' +
-                '<button class="btn btn-sm" data-action="goto-crafts-forge">В Кузню →</button>' +
+                '<span>' + t('returnedOnDeathHint') + '</span>' +
+                '<button class="btn btn-sm" data-action="goto-crafts-forge">' + t('toForgeBtn') + '</button>' +
               '</div>' +
             '</div>' +
+          '</div>' +
+        '</div>' +
+      '</div>'
+    );
+  }
+
+  function renderSettingsModal() {
+    if (!state.settingsModalOpen) return '';
+    const currentLang = getCurrentLang() || state.lang || 'ru';
+    return (
+      '<div class="modal-backdrop" data-backdrop="settings-modal">' +
+        '<div class="modal-panel">' +
+          '<div class="row-between" style="border-bottom:1px solid var(--border-subtle);padding-bottom:8px">' +
+            '<h3 style="font-size:16px">' + t('settingsTitle') + '</h3>' +
+            '<button class="btn btn-sm" data-action="close-settings">' + t('closeModalBtn') + '</button>' +
+          '</div>' +
+          '<div class="inner-box" style="display:flex;flex-direction:column;gap:8px">' +
+            '<div>' +
+              '<div class="text-xs font-semibold text-bright">' + t('settingsLanguageLabel') + '</div>' +
+              '<div class="text-2xs text-muted" style="margin-top:2px">' + t('settingsLanguageHint') + '</div>' +
+            '</div>' +
+            '<div class="row-wrap">' +
+              '<button class="btn ' +
+                (currentLang === 'ru' ? 'btn-amber' : '') +
+                '" style="flex:1" data-action="set-language" data-lang="ru">' +
+                t('langRussian') +
+              '</button>' +
+              '<button class="btn ' +
+                (currentLang === 'en' ? 'btn-amber' : '') +
+                '" style="flex:1" data-action="set-language" data-lang="en">' +
+                t('langEnglish') +
+              '</button>' +
+            '</div>' +
+          '</div>' +
+          '<div class="inner-box row-between text-xs">' +
+            '<span>' + t('settingsSoundLabel') + '</span>' +
+            '<button class="btn btn-sm" data-action="toggle-sound">' +
+              (state.soundMuted ? t('soundOffBtn') : t('soundOnBtn')) +
+            '</button>' +
+          '</div>' +
+          '<div class="inner-box row-between text-xs">' +
+            '<span>' + t('settingsSaveAndSnapshotLabel') + '</span>' +
+            '<div class="row-wrap">' +
+              '<button class="btn btn-sm" data-action="manual-save">' + t('saveTooltipTitle') + '</button>' +
+              '<button class="btn btn-sm btn-amber" data-action="export-html">' + t('snapshotBtn') + '</button>' +
+              '<button class="btn btn-sm btn-rose" data-action="reset-game">' + t('resetBtn') + '</button>' +
+            '</div>' +
+          '</div>' +
+          '<div class="row-wrap" style="justify-content:flex-end">' +
+            '<button class="btn btn-amber" data-action="close-settings">' + t('settingsCloseBtn') + '</button>' +
           '</div>' +
         '</div>' +
       '</div>'
@@ -4571,31 +4949,41 @@
       tabsHtml =
         '<button class="btn-tab ' +
         (state.abodeSubTab === 'SANCTUARY' ? 'active' : '') +
-        '" data-action="set-abode-sub" data-sub="SANCTUARY">Обитель и Чайная</button>' +
+        '" data-action="set-abode-sub" data-sub="SANCTUARY">' +
+        t('subTabSanctuary') +
+        '</button>' +
         '<button class="btn-tab ' +
         (state.abodeSubTab === 'ROSTER' ? 'active' : '') +
-        '" data-action="set-abode-sub" data-sub="ROSTER">Состав (' +
-        state.disciples.length +
-        ')' +
-        (anyReadyBreakthrough ? ' · Прорыв!' : '') +
+        '" data-action="set-abode-sub" data-sub="ROSTER">' +
+        t('subTabRoster', { count: state.disciples.length }) +
+        (anyReadyBreakthrough ? t('subTabBreakthroughReady') : '') +
+        '</button>' +
+        '<button class="btn-tab ' +
+        (state.abodeSubTab === 'INVENTORY' ? 'active' : '') +
+        '" data-action="set-abode-sub" data-sub="INVENTORY">' +
+        t('subTabInventory') +
         '</button>';
     } else if (state.activeTab === 'EXPEDITION') {
       tabsHtml =
         '<button class="btn-tab ' +
         (state.expeditionSubTab === 'ARENA' ? 'active' : '') +
-        '" data-action="set-exp-sub" data-sub="ARENA">Поле Боя (Ярус ' +
-        state.expedition.depthStage +
-        ')</button>' +
+        '" data-action="set-exp-sub" data-sub="ARENA">' +
+        t('subTabArena', { stage: state.expedition.depthStage }) +
+        '</button>' +
         '<button class="btn-tab ' +
         (state.expeditionSubTab === 'LINEUP' ? 'active' : '') +
-        '" data-action="set-exp-sub" data-sub="LINEUP">Строй и Лечение</button>' +
+        '" data-action="set-exp-sub" data-sub="LINEUP">' +
+        t('subTabLineup') +
+        '</button>' +
         '<button class="btn-tab ' +
         (state.expeditionSubTab === 'LOG' ? 'active' : '') +
-        '" data-action="set-exp-sub" data-sub="LOG">Журнал Похода</button>';
+        '" data-action="set-exp-sub" data-sub="LOG">' +
+        t('subTabExpLog') +
+        '</button>';
     } else if (state.activeTab === 'CRAFTS') {
       tabsHtml = Object.keys(math.CRAFT_STATIONS)
         .map(function (stKey) {
-          const stMeta = math.CRAFT_STATIONS[stKey];
+          const stMeta = getStationInfo(stKey);
           const master = getStationMaster(stKey);
           const busy =
             state.craftStations[stKey] && state.craftStations[stKey].activeCraft;
@@ -4605,8 +4993,8 @@
             '" data-action="set-crafts-sub" data-sub="' +
             stKey +
             '">' +
-            stMeta.name +
-            (master ? ' · ' + escapeHtml(master.name) : ' · Без мастера') +
+            escapeHtml(stMeta.name) +
+            (master ? ' · ' + escapeHtml(master.name) : t('noMasterSuffix')) +
             (busy ? ' ⚒' : '') +
             '</button>'
           );
@@ -4616,14 +5004,14 @@
       tabsHtml =
         '<button class="btn-tab ' +
         (state.chronicleSubTab === 'EVENTS' ? 'active' : '') +
-        '" data-action="set-chr-sub" data-sub="EVENTS">Летопись Событий (' +
-        state.chronicle.length +
-        ')</button>' +
+        '" data-action="set-chr-sub" data-sub="EVENTS">' +
+        t('subTabEvents', { count: state.chronicle.length }) +
+        '</button>' +
         '<button class="btn-tab ' +
         (state.chronicleSubTab === 'MEMORIAL' ? 'active' : '') +
-        '" data-action="set-chr-sub" data-sub="MEMORIAL">Зал Предков (' +
-        state.fallenMemorial.length +
-        ')</button>';
+        '" data-action="set-chr-sub" data-sub="MEMORIAL">' +
+        t('subTabMemorial', { count: state.fallenMemorial.length }) +
+        '</button>';
     }
 
     return (
@@ -4631,16 +5019,17 @@
         '<div class="subnav-tabs">' + tabsHtml + '</div>' +
         '<div class="subnav-status">' +
           (state.expedition.active
-            ? '<button class="btn btn-sm btn-rose font-mono" data-action="goto-arena">Бой: Ярус ' +
-              state.expedition.depthStage +
-              ' · В.' +
-              state.expedition.waveInStage +
-              '/3</button>'
+            ? '<button class="btn btn-sm btn-rose font-mono" data-action="goto-arena">' +
+              t('battleStatusBtn', {
+                stage: state.expedition.depthStage,
+                wave: state.expedition.waveInStage,
+              }) +
+              '</button>'
             : '') +
           (lootBufferTotal > 0
-            ? '<button class="btn btn-sm btn-amber font-mono" data-action="claim-loot">Забрать буфер (+' +
-              lootBufferTotal +
-              ')</button>'
+            ? '<button class="btn btn-sm btn-amber font-mono" data-action="claim-loot">' +
+              t('claimLootBufferBtn', { total: lootBufferTotal }) +
+              '</button>'
             : '') +
         '</div>' +
       '</div>'
@@ -4697,39 +5086,28 @@
     root.innerHTML =
       '<div class="app-shell">' +
         '<header class="top-header">' +
-          '<a class="brand-title" data-action="set-tab" data-tab="ABODE">Обитель Бессмертных</a>' +
+          '<a class="brand-title" data-action="set-tab" data-tab="ABODE">' + t('brandTitle') + '</a>' +
           '<div class="res-strip">' +
-            '<span class="has-tooltip" data-tooltip-title="Камни Духа" data-tooltip="Основная духовная валюта секты. Используется для найма послушников, возвышения Обители и запуска ремёсел.">Камни: <strong class="text-amber">' +
+            '<span class="has-tooltip" data-tooltip-title="' + escapeHtml(t('resSpiritStonesTitle')) + '" data-tooltip="' + escapeHtml(t('resSpiritStonesTooltip')) + '">' + t('resSpiritStonesLabel') + ' <strong class="text-amber">' +
               state.resources.spiritStones +
             '</strong></span>' +
             '<span class="res-sep">·</span>' +
-            '<span class="has-tooltip" data-tooltip-title="Болотное железо" data-tooltip="Тяжёлая руда из Карстового Разлома. Основной материал для ковки мечей в Кузнечном Горне.">Железо: <strong class="text-bright">' +
-              state.resources.bogIron +
-            '</strong></span>' +
-            '<span class="res-sep">·</span>' +
-            '<span class="has-tooltip" data-tooltip-title="Кровавый мох" data-tooltip="Духовная трава Разлома, впитавшая ци древних чудовищ. Необходима для варки эликсиров и пилюль в Алхимическом Котле.">Мох: <strong class="text-rose">' +
-              state.resources.bloodMoss +
-            '</strong></span>' +
-            '<span class="res-sep">·</span>' +
-            '<span class="has-tooltip" data-tooltip-title="Панцирь паука" data-tooltip="Прочный хитин пещерных арахнидов. Основной материал для пошива защитных облачений в Павильоне Брони.">Панцирь: <strong class="text-emerald">' +
-              state.resources.spiderCarapace +
-            '</strong></span>' +
-            '<span class="res-sep">·</span>' +
-            '<span class="has-tooltip" data-tooltip-title="Запас Медицины" data-tooltip="Пилюли Исцеления (восстанавливают Здоровье) / Отвары Очищения (снимают тяжёлые внутренние травмы).">Пилюли/Отвары: <strong class="text-bright">' +
-              state.consumables.healingPills +
-              '/' +
-              state.consumables.injuryDecoctions +
-            '</strong></span>' +
+            '<button class="btn btn-sm" style="padding:2px 8px;min-height:22px" data-action="open-inventory" data-tooltip-title="' + escapeHtml(t('headerInventoryTooltipTitle')) + '" data-tooltip="' + escapeHtml(t('headerInventoryTooltipBody')) + '">' +
+              t('headerInventoryBtn') +
+            '</button>' +
           '</div>' +
           '<div class="header-actions">' +
-            '<button class="btn btn-sm font-mono" data-action="manual-save" data-tooltip-title="Сохранение" data-tooltip="Автосохранение активно (нажмите для мгновенного сохранения прогресса)">' +
-              'Автосохр.: ' + escapeHtml(state.lastSavedAt || getTimeStr()) +
+            '<button class="btn btn-sm font-mono" data-action="manual-save" data-tooltip-title="' + escapeHtml(t('saveTooltipTitle')) + '" data-tooltip="' + escapeHtml(t('saveTooltipBody')) + '">' +
+              t('autoSaveBtn', { time: escapeHtml(state.lastSavedAt || getTimeStr()) }) +
             '</button>' +
-            '<button class="btn btn-sm" data-action="toggle-sound" data-tooltip-title="Звуковое сопровождение" data-tooltip="Включить или отключить звуковые эффекты обители">' +
-              (state.soundMuted ? 'Звук выкл.' : 'Звук вкл.') +
+            '<button class="btn btn-sm" data-action="toggle-sound" data-tooltip-title="' + escapeHtml(t('soundTooltipTitle')) + '" data-tooltip="' + escapeHtml(t('soundTooltipBody')) + '">' +
+              (state.soundMuted ? t('soundOffBtn') : t('soundOnBtn')) +
             '</button>' +
-            '<button class="btn btn-sm" data-action="reset-game" data-tooltip-title="Сброс прогресса" data-tooltip="Начать летопись секты с чистого листа">Сброс</button>' +
-            '<button class="btn btn-sm btn-amber" data-action="export-html" data-tooltip-title="Автономный слепок" data-tooltip="Выгрузить автономный HTML-слепок текущего сохранения в файл">Слепок</button>' +
+            '<button class="btn btn-sm" data-action="open-settings" data-tooltip-title="' + escapeHtml(t('settingsTooltipTitle')) + '" data-tooltip="' + escapeHtml(t('settingsTooltipBody')) + '">' +
+              t('settingsBtn') + ' (' + (getCurrentLang() || state.lang || 'ru').toUpperCase() + ')' +
+            '</button>' +
+            '<button class="btn btn-sm" data-action="reset-game" data-tooltip-title="' + escapeHtml(t('resetTooltipTitle')) + '" data-tooltip="' + escapeHtml(t('resetTooltipBody')) + '">' + t('resetBtn') + '</button>' +
+            '<button class="btn btn-sm btn-amber" data-action="export-html" data-tooltip-title="' + escapeHtml(t('snapshotTooltipTitle')) + '" data-tooltip="' + escapeHtml(t('snapshotTooltipBody')) + '">' + t('snapshotBtn') + '</button>' +
           '</div>' +
         '</header>' +
         renderSubnavBar(anyReadyBreakthrough, lootBufferTotal) +
@@ -4738,30 +5116,31 @@
         '</main>' +
         renderDiscipleCardModal() +
         renderBreakthroughModal() +
-        '<nav class="bottom-nav" aria-label="Нижняя навигация">' +
+        renderSettingsModal() +
+        '<nav class="bottom-nav" aria-label="' + escapeHtml(t('bottomNavAria')) + '">' +
           '<button class="bottom-nav-btn ' +
             (state.activeTab === 'ABODE' ? 'active' : '') +
             '" data-action="set-tab" data-tab="ABODE">' +
-            '<span>Обитель (' + state.disciples.length + ')</span>' +
+            '<span>' + t('tabAbode', { count: state.disciples.length }) + '</span>' +
           '</button>' +
           '<button class="bottom-nav-btn ' +
             (state.activeTab === 'EXPEDITION' ? 'active' : '') +
             '" data-action="set-tab" data-tab="EXPEDITION">' +
             '<span>' +
               (state.expedition.active
-                ? 'Разлом (Ярус ' + state.expedition.depthStage + ')'
-                : 'Разлом') +
+                ? t('tabRiftActive', { stage: state.expedition.depthStage })
+                : t('tabRift')) +
             '</span>' +
           '</button>' +
           '<button class="bottom-nav-btn ' +
             (state.activeTab === 'CRAFTS' ? 'active' : '') +
             '" data-action="set-tab" data-tab="CRAFTS">' +
-            '<span>Ремёсла</span>' +
+            '<span>' + t('tabCrafts') + '</span>' +
           '</button>' +
           '<button class="bottom-nav-btn ' +
             (state.activeTab === 'CHRONICLE' ? 'active' : '') +
             '" data-action="set-tab" data-tab="CHRONICLE">' +
-            '<span>Летопись</span>' +
+            '<span>' + t('tabChronicle') + '</span>' +
           '</button>' +
         '</nav>' +
       '</div>';
@@ -5036,6 +5415,15 @@
       renderApp();
       return;
     }
+    if (
+      e.target &&
+      e.target.getAttribute &&
+      e.target.getAttribute('data-backdrop') === 'settings-modal'
+    ) {
+      state.settingsModalOpen = false;
+      renderApp();
+      return;
+    }
 
     const target = e.target.closest('[data-action]');
     if (!target || target.disabled) return;
@@ -5047,6 +5435,29 @@
       renderApp();
     } else if (action === 'set-abode-sub') {
       state.abodeSubTab = target.getAttribute('data-sub');
+      persistState();
+      renderApp();
+    } else if (action === 'open-inventory') {
+      state.activeTab = 'ABODE';
+      state.abodeSubTab = 'INVENTORY';
+      persistState();
+      renderApp();
+    } else if (action === 'open-settings') {
+      state.settingsModalOpen = true;
+      renderApp();
+    } else if (action === 'close-settings') {
+      state.settingsModalOpen = false;
+      renderApp();
+    } else if (action === 'set-language') {
+      const nextLang = target.getAttribute('data-lang');
+      if (i18n && typeof i18n.setLanguage === 'function') {
+        state.lang = i18n.setLanguage(nextLang);
+      } else if (i18n && typeof i18n.setLang === 'function') {
+        state.lang = i18n.setLang(nextLang);
+      } else {
+        state.lang = nextLang === 'en' ? 'en' : 'ru';
+      }
+      soundFX.playClick();
       persistState();
       renderApp();
     } else if (action === 'set-exp-sub') {

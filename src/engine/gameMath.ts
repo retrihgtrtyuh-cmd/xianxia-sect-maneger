@@ -19,6 +19,11 @@ import {
   StatPillKey,
   TemperamentId,
 } from '../types/game';
+import {
+  t,
+  getDaoHeartLabel as i18nGetDaoHeartLabel,
+  getDaoHeartSubtitle,
+} from '../i18n';
 
 // ============================================================================
 // 1. СПРАВОЧНИКИ СЕТТИНГА САНЬСЯ (МОДУЛЬ 02, 03, 07)
@@ -386,25 +391,7 @@ export function generateDisciple(isHeavensGrace = false): Disciple {
 }
 
 export function getDaoHeartLabel(daoHeart: number | boolean | Disciple): string {
-  if (typeof daoHeart === 'boolean') {
-    return daoHeart ? 'Алмазное Сердце Дао' : 'Смятение смертного';
-  }
-  const rawVal =
-    daoHeart && typeof daoHeart === 'object'
-      ? typeof daoHeart.daoHeart === 'number' && !isNaN(daoHeart.daoHeart)
-        ? daoHeart.daoHeart
-        : 0
-      : typeof daoHeart === 'number' && !isNaN(daoHeart)
-      ? daoHeart
-      : 0;
-  const val = Math.max(-100, Math.min(100, Math.round(rawVal)));
-  if (val >= 80) return 'Алмазное Сердце Дао';
-  if (val >= 50) return 'Бесстрашие перед Небесами';
-  if (val >= 20) return 'Непоколебимый дух';
-  if (val >= -19) return 'Смятение смертного';
-  if (val >= -49) return 'Тень Сомнения';
-  if (val >= -79) return 'Одержимость (Дьявольский путь)';
-  return 'Истинный Демон Сердца';
+  return i18nGetDaoHeartLabel(daoHeart as number | boolean | { daoHeart?: number });
 }
 
 export function getDaoHeartState(unit: Disciple | number) {
@@ -418,14 +405,14 @@ export function getDaoHeartState(unit: Disciple | number) {
       : 0;
   const val = Math.max(-100, Math.min(100, Math.round(rawVal)));
   const label = getDaoHeartLabel(val);
+  const subtitle = getDaoHeartSubtitle(val);
 
   if (val >= 80) {
     return {
       id: 'DIAMOND_HEART',
       name: label,
       colorClass: 'text-amber-400',
-      subtitle:
-        'Высшая ясность духа: «Второе дыхание» в бою, защита от одержимости и благословение при Прорыве',
+      subtitle,
       breakthroughBonus: 15,
       dmgMultiplier: 1.0,
     };
@@ -435,8 +422,7 @@ export function getDaoHeartState(unit: Disciple | number) {
       id: 'FEARLESS_BEFORE_HEAVENS',
       name: label,
       colorClass: 'text-sky-400',
-      subtitle:
-        'Просветлённый взор: усилено усвоение целебных пилюль, ускорен набор боевой Ци и укреплён Прорыв',
+      subtitle,
       breakthroughBonus: 10,
       dmgMultiplier: 1.0,
     };
@@ -446,7 +432,7 @@ export function getDaoHeartState(unit: Disciple | number) {
       id: 'UNWAVERING_SPIRIT',
       name: label,
       colorClass: 'text-sky-400',
-      subtitle: 'Твёрдость воли: подавление страха в бою и повышенная устойчивость при Прорыве',
+      subtitle,
       breakthroughBonus: 5,
       dmgMultiplier: 1.0,
     };
@@ -456,7 +442,7 @@ export function getDaoHeartState(unit: Disciple | number) {
       id: 'MORTAL_CONFUSION',
       name: label,
       colorClass: 'text-[#94A3B8]',
-      subtitle: 'Равновесие мирских страстей и стремления к Дао',
+      subtitle,
       breakthroughBonus: 0,
       dmgMultiplier: 1.0,
     };
@@ -466,7 +452,7 @@ export function getDaoHeartState(unit: Disciple | number) {
       id: 'SHADOW_OF_DOUBT',
       name: label,
       colorClass: 'text-fuchsia-400',
-      subtitle: 'Ярость в ударах в обмен на тревогу духа при возвышении царства',
+      subtitle,
       breakthroughBonus: -5,
       dmgMultiplier: 1.1,
     };
@@ -476,8 +462,7 @@ export function getDaoHeartState(unit: Disciple | number) {
       id: 'DEMONIC_OBSESSION',
       name: label,
       colorClass: 'text-rose-400',
-      subtitle:
-        'Кровавая жажда: свирепый урон и вампиризм, но риск поглощения жизненной силы соратников в бою',
+      subtitle,
       breakthroughBonus: -10,
       dmgMultiplier: 1.2,
     };
@@ -486,7 +471,7 @@ export function getDaoHeartState(unit: Disciple | number) {
     id: 'TRUE_HEART_DEMON',
     name: label,
     colorClass: 'text-rose-400',
-    subtitle: 'Бездна Дьявольского пути: сокрушительная мощь, вампиризм и хищное поглощение Ци',
+    subtitle,
     breakthroughBonus: -15,
     dmgMultiplier: 1.35,
   };
@@ -861,7 +846,10 @@ export function getBreakthroughChance(
 }
 
 export function getRealmLabel(tier: 1 | 2, subLevel: number): string {
-  const tierName = tier === 1 ? 'Закалка Тела (I)' : 'Возведение Основы (II)';
-  const suffix = subLevel === 5 ? `${subLevel}-я ступень (Пик)` : `${subLevel}-я ступень`;
+  const tierName = tier === 1 ? t('realmTier1') : t('realmTier2');
+  const suffix =
+    subLevel === 5
+      ? t('realmSubLevelPeak', { sub: subLevel })
+      : t('realmSubLevel', { sub: subLevel });
   return `${tierName} · ${suffix}`;
 }
