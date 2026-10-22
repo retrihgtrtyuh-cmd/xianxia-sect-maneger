@@ -105,5 +105,5 @@ jobs:
             --form-string "chat_id=${TARGET_CHAT_ID}" \
             -F "document=@${APK_PATH}" \
             --form-string "caption=🛠 Сборка v1.0.${{ github.run_number }} | Коммит: ${COMMIT_MSG}" \
-            "https://api.telegram.org/bot7803276922:AAEmH8Emc1wx4nSbJ3sKg37-8g-I9lhanGc/sendDocument"
+            "https://api.telegram.org/bot7803276922:AAE9780_-h4mf-78P12kX8veuMEWh3rl1J4/sendDocument"
             
