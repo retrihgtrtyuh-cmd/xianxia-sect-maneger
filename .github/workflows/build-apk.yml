@@ -83,9 +83,9 @@ jobs:
           files: |
             android/app/build/outputs/apk/debug/*.apk
 
-      - name: Send APK to Telegram via curl
+            - name: Send APK to Telegram via curl
         run: |
-          APK_FILE=$(find . -path "*/outputs/apk/*.apk" | head -n 1)
+          APK_FILE=$(find . -name "app-debug.apk" | head -n 1)
           if [ -z "$APK_FILE" ]; then
             echo "Error: APK file not found!"
             exit 1
@@ -94,14 +94,15 @@ jobs:
 
           INPUT_CHAT_ID="${{ github.event.inputs.chat_id }}"
           PAYLOAD_CHAT_ID="${{ github.event.client_payload.chat_id }}"
-          DEFAULT_CHAT_ID="Abrikos_chanel"
+          DEFAULT_CHAT_ID="@Abrikos_chanel"
 
           TARGET_CHAT_ID="${INPUT_CHAT_ID:-${PAYLOAD_CHAT_ID:-$DEFAULT_CHAT_ID}}"
           COMMIT_MSG=$(git log -1 --pretty=%s)
 
-          RESPONSE=$(curl -X POST "https://api.telegram.org/bot7803276922:AAEMh8Emc1wx4nSbJ3sKg37-8g-I9lhanGc/sendDocument" \
+          RESPONSE=$(curl -X POST "https://api.telegram.org/bot7803276922:AAEmH8Emc1wx4nSbJ3sKg37-8g-I9lhanGc/sendDocument" \
             -F "chat_id=${TARGET_CHAT_ID}" \
             -F "document=@${APK_FILE}" \
-            --form-string "caption=✅ Сборка v1.0.${{ github.run_number }} | Коммит: ${COMMIT_MSG}")
+            --form-string "caption=🛠 Сборка v1.0.14 | Коммит: ${COMMIT_MSG}")
 
           echo "Telegram API Response: $RESPONSE"
+          
