@@ -64,7 +64,15 @@
     - Векторные иллюстрации в стиле тёмного санься (`./js/illustrations.js`, `./src/components/XianxiaArt.tsx`).
     - Генератор однофайлового автономного HTML-слепка (`./js/standaloneExporter.js`), позволяющий скачать игру со всеми скриптами и стилями в один `.html` файл для запуска по `file://`.
 
+  - **Автоматизация сборки Android APK и доставка (CI/CD GitHub Actions):**
+    - Файл `.github/workflows/build-apk.yml`:
+      - Триггеры: `push` в ветку `main`, ручной запуск `workflow_dispatch` (с опциональным `chat_id`) и события бота `repository_dispatch`.
+      - Права `permissions: contents: write` для создания релизов.
+      - Автоматическое создание GitHub Release (`softprops/action-gh-release@v2`) с тегом `v1.0.${{ github.run_number }}` и прикреплением собранного `.apk`.
+      - Интеллектуальная отправка в Telegram через `curl`: динамический выбор `chat_id` (из inputs/client_payload, либо fallback на дефолтный чат секты `-1003962969725`) с указанием версии `v1.0.${{ github.run_number }}` и описанием последнего коммита.
+
 - **Архитектура и файлы:**
+  - `./.github/workflows/build-apk.yml`: автоматическая сборка Gradle Release APK, публикация в GitHub Releases и прямая отправка в Telegram.
   - `./js/i18n.js` и `./src/i18n.ts`: словари `ru` / `en`, функции `t()`, `getLanguage()` / `getLang()`, `setLanguage()` / `setLang()` и локализаторы игровых справочников.
   - `./js/gameMath.js` (`window.SectGame.math`): математическое ядро, справочники корней (`SPIRIT_ROOTS`, `DARK_SPIRIT_ROOTS`), конституций, характеров, архетипов, ремесленных станций и рецептов, `getDaoHeartState(unit)`, `calculateEffectiveStats`, `computeCombatDamage`, `getBreakthroughChance`.
   - `./js/app.js` (`window.SectGame.app`): игровой цикл (1000 мс), управление состоянием и `localStorage`, рендеринг вкладок (`Обитель`, `Инвентарь`, `Состав`, `Поход`), модальных окон (`Досье ученика`, `Настройки`), обработчики событий и система `Tooltip` с задержкой 600 мс.
@@ -77,4 +85,5 @@
 
 - **Следующий приоритетный шаг:**
   1. Реализовать расчёт офлайн-прогресса при загрузке сохранения (`Date.now() - lastSavedAt`) для пассивной культивации, ремесленных павильонов и восстановления в Обители.
+
 

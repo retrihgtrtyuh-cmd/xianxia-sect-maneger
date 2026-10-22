@@ -4,8 +4,16 @@ on:
   push:
     branches:
       - main
-      - master
-  workflow_dispatch: # Позволяет запускать сборку вручную через вкладку Actions
+  workflow_dispatch:
+    inputs:
+      chat_id:
+        description: 'Telegram Chat ID (optional)'
+        required: false
+        type: string
+  repository_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build-android:
@@ -14,6 +22,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -28,11 +38,36 @@ jobs:
       - name: Build Release APK
         run: ./gradlew assembleRelease
 
+      - name: Create GitHub Release & Upload APK
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: "v1.0.${{ github.run_number }}"
+          name: "Release v1.0.${{ github.run_number }}"
+          draft: false
+          prerelease: false
+          files: app/build/outputs/apk/release/*.apk
+
       - name: Send APK to Telegram via curl
         run: |
           APK_FILE=$(find app/build/outputs/apk/release -name "*.apk" | head -n 1)
+          if [ -z "$APK_FILE" ]; then
+            echo "Error: APK file not found!"
+            exit 1
+          fi
           echo "Found APK: $APK_FILE"
-          curl -s -X POST "https://api.telegram.org/bot/sendDocument" \7803276922:AAEMh8Emc1wx4nSbJ3sKg37-8g-I9lhanGc
-            -F "chat_id=-1003962969725" \
+
+          INPUT_CHAT_ID="${{ github.event.inputs.chat_id }}"
+          PAYLOAD_CHAT_ID="${{ github.event.client_payload.chat_id }}"
+          DEFAULT_CHAT_ID="-1003962969725"
+
+          TARGET_CHAT_ID="${INPUT_CHAT_ID:-${PAYLOAD_CHAT_ID:-$DEFAULT_CHAT_ID}}"
+          echo "Target Telegram Chat ID: $TARGET_CHAT_ID"
+
+          COMMIT_MSG=$(git log -1 --pretty=%s)
+          CAPTION="✅ Сборка v1.0.${{ github.run_number }}
+Коммит: ${COMMIT_MSG}"
+
+          curl -s -X POST "https://api.telegram.org/bot7803276922:AAEMh8Emc1wx4nSbJ3sKg37-8g-I9lhanGc/sendDocument" \
+            -F "chat_id=${TARGET_CHAT_ID}" \
             -F "document=@${APK_FILE}" \
-            -F "caption=✅ Сборка завершена (коммит: ${GITHUB_SHA::7})"
+            -F "caption=${CAPTION}"
