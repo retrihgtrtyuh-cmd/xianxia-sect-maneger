@@ -68,8 +68,10 @@
     - Файл `.github/workflows/build-apk.yml`:
       - Триггеры: `push` в ветку `main`, ручной запуск `workflow_dispatch` (с опциональным `chat_id`) и события бота `repository_dispatch`.
       - Права `permissions: contents: write` для создания релизов.
-      - Автоматическое создание GitHub Release (`softprops/action-gh-release@v2`) с тегом `v1.0.${{ github.run_number }}` и прикреплением собранного `.apk`.
-      - Интеллектуальная отправка в Telegram через `curl`: динамический выбор `chat_id` (из inputs/client_payload, либо fallback на дефолтный чат секты `-1003962969725`) с указанием версии `v1.0.${{ github.run_number }}` и описанием последнего коммита.
+      - Переход на сборку отладочного APK (`./gradlew assembleDebug`), подписанного стандартным debug-ключом для беспрепятственной установки на реальные Android-устройства.
+      - Универсальный поиск собранного файла: `find . -path "*/outputs/apk/*.apk"`.
+      - Автоматическое создание GitHub Release (`softprops/action-gh-release@v2`) с тегом `v1.0.${{ github.run_number }}` и прикреплением артефактов `**/outputs/apk/**/*.apk`.
+      - Интеллектуальная отправка в Telegram через `curl`: динамический выбор `chat_id` (из inputs/client_payload, либо fallback на дефолтный чат секты `-1003962969725`) с безопасной передачей `--form-string` описания версии и коммита, а также полным логированием ответа Telegram API в консоль Actions.
 
 - **Архитектура и файлы:**
   - `./.github/workflows/build-apk.yml`: автоматическая сборка Gradle Release APK, публикация в GitHub Releases и прямая отправка в Telegram.

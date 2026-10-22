@@ -1,4 +1,4 @@
-name: Build Release APK & Send to Telegram
+name: Build Debug APK & Send to Telegram
 
 on:
   push:
@@ -35,8 +35,8 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x ./gradlew
 
-      - name: Build Release APK
-        run: ./gradlew assembleRelease
+      - name: Build Debug APK
+        run: ./gradlew assembleDebug
 
       - name: Create GitHub Release & Upload APK
         uses: softprops/action-gh-release@v2
@@ -45,11 +45,12 @@ jobs:
           name: "Release v1.0.${{ github.run_number }}"
           draft: false
           prerelease: false
-          files: app/build/outputs/apk/release/*.apk
+          files: |
+            **/outputs/apk/**/*.apk
 
       - name: Send APK to Telegram via curl
         run: |
-          APK_FILE=$(find app/build/outputs/apk/release -name "*.apk" | head -n 1)
+          APK_FILE=$(find . -path "*/outputs/apk/*.apk" | head -n 1)
           if [ -z "$APK_FILE" ]; then
             echo "Error: APK file not found!"
             exit 1
@@ -64,10 +65,12 @@ jobs:
           echo "Target Telegram Chat ID: $TARGET_CHAT_ID"
 
           COMMIT_MSG=$(git log -1 --pretty=%s)
-          CAPTION="✅ Сборка v1.0.${{ github.run_number }}
-Коммит: ${COMMIT_MSG}"
 
-          curl -s -X POST "https://api.telegram.org/bot7803276922:AAEMh8Emc1wx4nSbJ3sKg37-8g-I9lhanGc/sendDocument" \
+          echo "Sending APK to Telegram..."
+          RESPONSE=$(curl -X POST "https://api.telegram.org/bot7803276922:AAEMh8Emc1wx4nSbJ3sKg37-8g-I9lhanGc/sendDocument" \
             -F "chat_id=${TARGET_CHAT_ID}" \
             -F "document=@${APK_FILE}" \
-            -F "caption=${CAPTION}"
+            --form-string "caption=✅ Сборка v1.0.${{ github.run_number }} | Коммит: ${COMMIT_MSG}")
+
+          echo "Telegram API Response:"
+          echo "$RESPONSE"
