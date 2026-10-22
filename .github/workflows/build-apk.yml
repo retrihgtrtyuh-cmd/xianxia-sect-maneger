@@ -83,7 +83,7 @@ jobs:
           files: |
             android/app/build/outputs/apk/debug/*.apk
 
-            - name: Send APK to Telegram via curl
+      - name: Send APK to Telegram via curl
         run: |
           APK_FILE=$(find . -name "app-debug.apk" | head -n 1)
           if [ -z "$APK_FILE" ]; then
