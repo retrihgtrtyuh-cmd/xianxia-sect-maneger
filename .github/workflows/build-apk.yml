@@ -2,12 +2,16 @@ name: Build Debug APK & Send to Telegram
 
 on:
   push:
-    branches:
-      - main
+    branches: [ "main" ]
   workflow_dispatch:
     inputs:
       chat_id:
-        description: 'Telegram Chat ID (optional)'
+        description: 'Telegram Chat ID to send APK'
+        required: false
+        default: '@Abrikos_chanel'
+        type: string
+      notes:
+        description: 'Build notes'
         required: false
         type: string
   repository_dispatch:
