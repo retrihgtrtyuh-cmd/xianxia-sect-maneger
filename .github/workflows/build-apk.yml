@@ -22,31 +22,46 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      - name: Set up JDK 17
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
-          java-version: '17'
+          java-version: '21'
           distribution: 'temurin'
-          cache: 'gradle'
 
-      - name: Grant execute permission for gradlew
-        run: chmod +x ./gradlew
+      - name: Build Web App & Generate Android Project
+        run: |
+          npm install
+          npm run build
+          if [ ! -d "android" ]; then
+            npm install @capacitor/core @capacitor/cli @capacitor/android
+            if [ ! -f "capacitor.config.json" ] && [ ! -f "capacitor.config.ts" ]; then
+              npx cap init "Xianxia Sect Manager" "com.xianxia.sectmanager" --web-dir dist
+            fi
+            npx cap add android
+          fi
+          npx cap sync android
 
-      - name: Build Debug APK
-        run: ./gradlew assembleDebug
+      - name: Build Debug APK with Gradle
+        working-directory: ./android
+        run: |
+          chmod +x ./gradlew
+          ./gradlew assembleDebug
 
       - name: Create GitHub Release & Upload APK
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: "v1.0.${{ github.run_number }}"
+          tag_name: v1.0.${{ github.run_number }}
           name: "Release v1.0.${{ github.run_number }}"
           draft: false
           prerelease: false
           files: |
-            **/outputs/apk/**/*.apk
+            android/app/build/outputs/apk/debug/*.apk
 
       - name: Send APK to Telegram via curl
         run: |
@@ -62,15 +77,11 @@ jobs:
           DEFAULT_CHAT_ID="-1003962969725"
 
           TARGET_CHAT_ID="${INPUT_CHAT_ID:-${PAYLOAD_CHAT_ID:-$DEFAULT_CHAT_ID}}"
-          echo "Target Telegram Chat ID: $TARGET_CHAT_ID"
-
           COMMIT_MSG=$(git log -1 --pretty=%s)
 
-          echo "Sending APK to Telegram..."
           RESPONSE=$(curl -X POST "https://api.telegram.org/bot7803276922:AAEMh8Emc1wx4nSbJ3sKg37-8g-I9lhanGc/sendDocument" \
             -F "chat_id=${TARGET_CHAT_ID}" \
             -F "document=@${APK_FILE}" \
             --form-string "caption=✅ Сборка v1.0.${{ github.run_number }} | Коммит: ${COMMIT_MSG}")
 
-          echo "Telegram API Response:"
-          echo "$RESPONSE"
+          echo "Telegram API Response: $RESPONSE"
