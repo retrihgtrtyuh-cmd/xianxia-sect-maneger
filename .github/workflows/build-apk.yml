@@ -36,10 +36,11 @@ jobs:
 
       - name: Build Web App & Generate Android Project
         run: |
-          npm install
+          rm -rf package-lock.json node_modules
+          npm install --legacy-peer-deps
           npm run build
           if [ ! -d "android" ]; then
-            npm install @capacitor/core @capacitor/cli @capacitor/android
+            npm install @capacitor/core @capacitor/cli @capacitor/android --legacy-peer-deps --no-package-lock
             if [ ! -f "capacitor.config.json" ] && [ ! -f "capacitor.config.ts" ]; then
               npx cap init "Xianxia Sect Manager" "com.xianxia.sectmanager" --web-dir dist
             fi
