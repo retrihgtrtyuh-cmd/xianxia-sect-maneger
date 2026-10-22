@@ -33,6 +33,6 @@ jobs:
           APK_FILE=$(find app/build/outputs/apk/release -name "*.apk" | head -n 1)
           echo "Found APK: $APK_FILE"
           curl -s -X POST "https://api.telegram.org/bot/sendDocument" \7803276922:AAEMh8Emc1wx4nSbJ3sKg37-8g-I9lhanGc
-            -F "chat_id=+2DR8U_NCfUs5OTJi" \
+            -F "chat_id=-1003962969725" \
             -F "document=@${APK_FILE}" \
             -F "caption=✅ Сборка завершена (коммит: ${GITHUB_SHA::7})"
