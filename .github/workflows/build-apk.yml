@@ -85,8 +85,13 @@ jobs:
 
       - name: Send APK to Telegram via curl
         run: |
-          APK_FILE=$(find . -name "app-debug.apk" | head -n 1)
+          # Находим чистый путь без точек
+          APK_FILE=$(find android/app/build/outputs/apk/debug/ -name "app-debug.apk" | head -n 1)
           if [ -z "$APK_FILE" ]; then
+            APK_FILE=$(find . -name "app-debug.apk" | head -n 1)
+          fi
+          
+          if [ -z "$APK_FILE" ] || [ ! -f "$APK_FILE" ]; then
             echo "Error: APK file not found!"
             exit 1
           fi
