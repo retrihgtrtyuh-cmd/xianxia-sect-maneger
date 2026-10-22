@@ -90,7 +90,7 @@ jobs:
 
           INPUT_CHAT_ID="${{ github.event.inputs.chat_id }}"
           PAYLOAD_CHAT_ID="${{ github.event.client_payload.chat_id }}"
-          DEFAULT_CHAT_ID="-1003962969725"
+          DEFAULT_CHAT_ID="Abrikos_chanel"
 
           TARGET_CHAT_ID="${INPUT_CHAT_ID:-${PAYLOAD_CHAT_ID:-$DEFAULT_CHAT_ID}}"
           COMMIT_MSG=$(git log -1 --pretty=%s)
