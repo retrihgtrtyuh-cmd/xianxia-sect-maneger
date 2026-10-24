@@ -5097,9 +5097,6 @@
             '</button>' +
           '</div>' +
           '<div class="header-actions">' +
-            '<button class="btn btn-sm font-mono" data-action="manual-save" data-tooltip-title="' + escapeHtml(t('saveTooltipTitle')) + '" data-tooltip="' + escapeHtml(t('saveTooltipBody')) + '">' +
-              t('autoSaveBtn', { time: escapeHtml(state.lastSavedAt || getTimeStr()) }) +
-            '</button>' +
             '<button class="btn btn-sm" data-action="toggle-sound" data-tooltip-title="' + escapeHtml(t('soundTooltipTitle')) + '" data-tooltip="' + escapeHtml(t('soundTooltipBody')) + '">' +
               (state.soundMuted ? t('soundOffBtn') : t('soundOnBtn')) +
             '</button>' +
@@ -5431,16 +5428,13 @@
     const action = target.getAttribute('data-action');
     if (action === 'set-tab') {
       state.activeTab = target.getAttribute('data-tab');
-      persistState();
       renderApp();
     } else if (action === 'set-abode-sub') {
       state.abodeSubTab = target.getAttribute('data-sub');
-      persistState();
       renderApp();
     } else if (action === 'open-inventory') {
       state.activeTab = 'ABODE';
       state.abodeSubTab = 'INVENTORY';
-      persistState();
       renderApp();
     } else if (action === 'open-settings') {
       state.settingsModalOpen = true;
@@ -5462,36 +5456,29 @@
       renderApp();
     } else if (action === 'set-exp-sub') {
       state.expeditionSubTab = target.getAttribute('data-sub');
-      persistState();
       renderApp();
     } else if (action === 'set-crafts-sub') {
       state.craftsSubTab = target.getAttribute('data-sub');
-      persistState();
       renderApp();
     } else if (action === 'set-chr-sub') {
       state.chronicleSubTab = target.getAttribute('data-sub');
-      persistState();
       renderApp();
     } else if (action === 'goto-arena') {
       state.activeTab = 'EXPEDITION';
       state.expeditionSubTab = 'ARENA';
-      persistState();
       renderApp();
     } else if (action === 'goto-crafts-potential') {
       state.inspectedDiscipleId = null;
       state.activeTab = 'CRAFTS';
       state.craftsSubTab = 'CAULDRON';
-      persistState();
       renderApp();
     } else if (action === 'goto-crafts-forge') {
       state.inspectedDiscipleId = null;
       state.activeTab = 'CRAFTS';
       state.craftsSubTab = 'FORGE';
-      persistState();
       renderApp();
     } else if (action === 'select-disciple') {
       state.selectedDiscipleId = target.getAttribute('data-id');
-      persistState();
       renderApp();
     } else if (
       action === 'open-disciple-card' ||
@@ -5500,7 +5487,6 @@
       const id = target.getAttribute('data-id');
       state.selectedDiscipleId = id;
       state.inspectedDiscipleId = id;
-      persistState();
       renderApp();
     } else if (action === 'close-disciple-card') {
       state.inspectedDiscipleId = null;
@@ -5603,7 +5589,6 @@
       confirmRealmT2Breakthrough();
     } else if (action === 'filter-chronicle') {
       state.chronicleFilter = target.getAttribute('data-cat');
-      persistState();
       renderApp();
     } else if (action === 'toggle-sound') {
       state.soundMuted = !state.soundMuted;
@@ -5645,9 +5630,13 @@
     window.setInterval(function () {
       executeCombatStep();
       executeSectIdleTick();
-      persistState();
       renderApp();
     }, 1250);
+
+    // Автосохранение каждые 15 секунд с перезаписью сохранения
+    window.setInterval(function () {
+      persistState();
+    }, 15000);
   }
 
   if (document.readyState === 'loading') {

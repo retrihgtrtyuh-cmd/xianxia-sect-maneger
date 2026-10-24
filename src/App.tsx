@@ -237,24 +237,28 @@ export default function App() {
     ]
   );
 
-  // Автосохранение прогресса в localStorage
+  const savePayloadRef = useRef<SavedGameData>({
+    sectLevel,
+    resources,
+    consumables,
+    warehouseGear,
+    freeRecruitsLeft,
+    disciples,
+    fallenMemorial,
+    chronicle: chronicle.slice(0, 60),
+  });
+
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    try {
-      const payload: SavedGameData = {
-        sectLevel,
-        resources,
-        consumables,
-        warehouseGear,
-        freeRecruitsLeft,
-        disciples,
-        fallenMemorial,
-        chronicle: chronicle.slice(0, 60),
-      };
-      window.localStorage.setItem(SAVE_STORAGE_KEY, JSON.stringify(payload));
-    } catch {
-      // ignore storage quota errors
-    }
+    savePayloadRef.current = {
+      sectLevel,
+      resources,
+      consumables,
+      warehouseGear,
+      freeRecruitsLeft,
+      disciples,
+      fallenMemorial,
+      chronicle: chronicle.slice(0, 60),
+    };
   }, [
     sectLevel,
     resources,
@@ -265,6 +269,27 @@ export default function App() {
     fallenMemorial,
     chronicle,
   ]);
+
+  // Автосохранение прогресса в localStorage каждые 15 секунд с перезаписью старого сохранения
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const writeSave = () => {
+      try {
+        window.localStorage.setItem(
+          SAVE_STORAGE_KEY,
+          JSON.stringify(savePayloadRef.current)
+        );
+      } catch {
+        // ignore storage quota errors
+      }
+    };
+    const interval = window.setInterval(writeSave, 15000);
+    window.addEventListener('beforeunload', writeSave);
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener('beforeunload', writeSave);
+    };
+  }, []);
 
   const addChronicle = (category: ChronicleCategory, title: string, detail: string) => {
     const time = new Date().toLocaleTimeString('ru-RU', {
