@@ -5621,7 +5621,10 @@
     }
   }
 
-  document.addEventListener('DOMContentLoaded', function () {
+  var appInitialized = false;
+  function initApp() {
+    if (appInitialized) return;
+    appInitialized = true;
     Tooltip.init();
     document.addEventListener('click', handleDocumentClick);
     window.addEventListener('beforeunload', persistState);
@@ -5645,7 +5648,13 @@
       persistState();
       renderApp();
     }, 1250);
-  });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initApp);
+  } else {
+    initApp();
+  }
 
   window.SectGame.app = {
     state: state,

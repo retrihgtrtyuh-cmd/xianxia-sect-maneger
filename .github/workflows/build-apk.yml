@@ -43,6 +43,9 @@ jobs:
           rm -rf package-lock.json node_modules capacitor.config.ts
           npm install --legacy-peer-deps
           npm run build
+          mkdir -p dist/js dist/css
+          cp -r js/* dist/js/
+          cp -r css/* dist/css/
           cat << 'EOF' > capacitor.config.json
           {
             "appId": "com.xianxia.sectmanager",
