@@ -1,0 +1,6 @@
+{
+  "name": "Idle Sect Manager: Обитель Бессмертных",
+  "description": "Альфа-версия (MVP) симулятора управления сектой в сеттинге санься (Xianxia) с пошаговыми экспедициями в Карстовый Разлом, автономной экономикой учеников, алхимией и прорывами царств.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
