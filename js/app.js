@@ -267,6 +267,11 @@
   const state = {
     lang: getCurrentLang() || (saved && saved.lang) || 'ru',
     settingsModalOpen: false,
+    daoModalOpen: false,
+    bannerViewMode: 'DAO_SCALE',
+    daoScaleTilt: 0,
+    daoShieldMode: 'HARMONY',
+    daoPulseActive: false,
     activeTab: (saved && saved.activeTab) || 'ABODE', // ABODE | EXPEDITION | CRAFTS | CHRONICLE
     abodeSubTab: (saved && saved.abodeSubTab) || 'SANCTUARY', // SANCTUARY | ROSTER | INVENTORY
     expeditionSubTab: (saved && saved.expeditionSubTab) || 'ARENA', // ARENA | LINEUP | LOG
@@ -3300,7 +3305,12 @@
 
       return (
         '<div class="flex-col-fill" style="justify-content:space-between">' +
-          illustrations.renderSectAbodeBanner(state.sectLevel) +
+          illustrations.renderSectAbodeBanner(state.sectLevel, {
+            viewMode: state.bannerViewMode || 'DAO_SCALE',
+            tilt: state.daoScaleTilt || 0,
+            shieldMode: state.daoShieldMode || 'HARMONY',
+            pulseActive: state.daoPulseActive,
+          }) +
           '<div class="grid-2" style="flex:1 1 0%;min-height:0">' +
             '<section class="card">' +
               '<div>' +
@@ -3512,7 +3522,12 @@
                         escapeHtml(formatDaoHeartTooltip(unit.daoHeart, daoState)) +
                         '">' +
                         '<div class="row-between text-2xs">' +
-                          '<span class="text-muted font-semibold has-tooltip">' + t('daoHeartLabel') + '</span>' +
+                          '<span class="text-muted font-semibold has-tooltip" style="display:inline-flex;align-items:center;gap:5px">' +
+                            (illustrations.renderMiniDaoScalePixelIcon
+                              ? illustrations.renderMiniDaoScalePixelIcon(unit.daoHeart)
+                              : '') +
+                            t('daoHeartLabel') +
+                          '</span>' +
                           '<strong class="' +
                             daoState.colorClass +
                             '">' +
@@ -3550,7 +3565,12 @@
                             '%"></div></div>' +
                         '</div>' +
                         '<div data-tooltip-title="' + escapeHtml(t('qiShieldTooltipTitle')) + '" data-tooltip="' + escapeHtml(t('qiShieldTooltipBody')) + '">' +
-                          '<div class="row-between"><span class="text-cyan">' + t('qiShieldLabel') + '</span><span class="text-cyan">' +
+                          '<div class="row-between"><span class="text-cyan" style="display:inline-flex;align-items:center;gap:3px">' +
+                            (illustrations.renderMiniQiShieldPixelIcon
+                              ? illustrations.renderMiniQiShieldPixelIcon(eff.qiShield > 0)
+                              : '') +
+                            t('qiShieldLabel') +
+                          '</span><span class="text-cyan">' +
                             eff.qiShield +
                             '/' +
                             eff.maxQiShield +
@@ -4686,7 +4706,12 @@
               escapeHtml(formatDaoHeartTooltip(unit.daoHeart, daoState)) +
               '">' +
               '<div class="row-between text-xs">' +
-                '<span class="text-muted font-semibold has-tooltip">' + t('daoHeartLabel') + '</span>' +
+                '<span class="text-muted font-semibold has-tooltip" style="display:inline-flex;align-items:center;gap:5px">' +
+                  (illustrations.renderMiniDaoScalePixelIcon
+                    ? illustrations.renderMiniDaoScalePixelIcon(unit.daoHeart)
+                    : '') +
+                  t('daoHeartLabel') +
+                '</span>' +
                 '<strong class="' +
                   daoState.colorClass +
                   '">' +
@@ -4714,7 +4739,11 @@
           '<div style="flex-shrink:0;display:flex;flex-direction:column;gap:6px">' +
             '<div class="row-between text-2xs text-muted">' +
               '<span class="font-semibold">' + t('overallStatsTitle') + '</span>' +
-              '<span class="font-mono"><span class="text-cyan">' + t('qiShieldLabel') + ': ' +
+              '<span class="font-mono"><span class="text-cyan" style="display:inline-flex;align-items:center;gap:3px">' +
+                (illustrations.renderMiniQiShieldPixelIcon
+                  ? illustrations.renderMiniQiShieldPixelIcon(eff.qiShield > 0)
+                  : '') +
+                t('qiShieldLabel') + ': ' +
                 eff.qiShield +
                 '/' +
                 eff.maxQiShield +
@@ -4977,6 +5006,84 @@
     );
   }
 
+  function renderDaoScaleModal() {
+    if (!state.daoModalOpen) return '';
+    return (
+      '<div class="modal-backdrop" data-backdrop="dao-modal">' +
+        '<div class="modal-panel modal-panel-lg" style="max-width:780px;border-color:#d97706">' +
+          '<div class="row-between" style="border-bottom:1px solid var(--border-subtle);padding-bottom:8px">' +
+            '<div>' +
+              '<h3 style="font-size:17px;color:#f8fafc">' + t('daoModalTitle') + '</h3>' +
+              '<div class="text-2xs text-cyan font-mono" style="margin-top:2px">' + t('daoModalSubtitle') + '</div>' +
+            '</div>' +
+            '<button class="btn btn-sm" data-action="close-dao-modal">' + t('closeModalBtn') + '</button>' +
+          '</div>' +
+
+          /* 16:9 Pixel Art Interactive Canvas */
+          '<div class="dao-pixel-16x9-frame">' +
+            (illustrations.renderDaoScalePixelArtSvg
+              ? illustrations.renderDaoScalePixelArtSvg({
+                  tilt: state.daoScaleTilt || 0,
+                  shieldMode: state.daoShieldMode || 'HARMONY',
+                  pulseActive: state.daoPulseActive,
+                })
+              : '') +
+          '</div>' +
+
+          /* Interactive Controls for the Dao Scale & Spiritual Qi Shield */
+          '<div class="inner-box row-between">' +
+            '<div class="row-wrap">' +
+              '<button class="btn btn-sm ' + (state.daoScaleTilt < 0 ? 'btn-rose' : '') + '" data-action="dao-tilt" data-tilt="-45">' +
+                t('daoTiltAbyssBtn') +
+              '</button>' +
+              '<button class="btn btn-sm ' + (state.daoScaleTilt === 0 ? 'btn-amber' : '') + '" data-action="dao-tilt" data-tilt="0">' +
+                t('daoTiltBalanceBtn') +
+              '</button>' +
+              '<button class="btn btn-sm ' + (state.daoScaleTilt > 0 ? 'btn-emerald' : '') + '" data-action="dao-tilt" data-tilt="45">' +
+                t('daoTiltLightBtn') +
+              '</button>' +
+            '</div>' +
+            '<div class="row-wrap">' +
+              '<button class="btn btn-sm ' + (state.daoShieldMode === 'HARMONY' ? 'btn-amber' : '') + '" data-action="set-dao-shield-mode" data-mode="HARMONY">' +
+                t('daoShieldModeHarmony') +
+              '</button>' +
+              '<button class="btn btn-sm ' + (state.daoShieldMode === 'BASTION' ? 'btn-amber' : '') + '" data-action="set-dao-shield-mode" data-mode="BASTION">' +
+                t('daoShieldModeBastion') +
+              '</button>' +
+              '<button class="btn btn-sm ' + (state.daoShieldMode === 'SURGE' ? 'btn-amber' : '') + '" data-action="set-dao-shield-mode" data-mode="SURGE">' +
+                t('daoShieldModeSurge') +
+              '</button>' +
+              '<button class="btn btn-sm" style="background:rgba(14,165,233,0.22);border-color:#38bdf8;color:#e0f2fe" data-action="dao-pulse-qi">' +
+                t('daoPulseQiBtn') +
+              '</button>' +
+            '</div>' +
+          '</div>' +
+
+          /* 3 Lore Pillars */
+          '<div class="grid-3-cols text-xs">' +
+            '<div class="inner-box">' +
+              '<div class="font-semibold text-rose">' + t('daoLoreAbyssTitle') + '</div>' +
+              '<div class="text-2xs text-muted" style="margin-top:4px">' + t('daoLoreAbyssDesc') + '</div>' +
+            '</div>' +
+            '<div class="inner-box">' +
+              '<div class="font-semibold text-cyan">' + t('daoLoreShieldTitle') + '</div>' +
+              '<div class="text-2xs text-muted" style="margin-top:4px">' + t('daoLoreShieldDesc') + '</div>' +
+            '</div>' +
+            '<div class="inner-box">' +
+              '<div class="font-semibold text-amber">' + t('daoLoreLightTitle') + '</div>' +
+              '<div class="text-2xs text-muted" style="margin-top:4px">' + t('daoLoreLightDesc') + '</div>' +
+            '</div>' +
+          '</div>' +
+
+          '<div class="row-between">' +
+            '<span class="text-2xs text-muted font-mono">320×180 Native Grid · 16:9 Pixel Art · Jade &amp; Gold · Spiritual Qi Shield</span>' +
+            '<button class="btn btn-amber" data-action="close-dao-modal">' + t('closeModalBtn') + '</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>'
+    );
+  }
+
   function renderSubnavBar(anyReadyBreakthrough, lootBufferTotal) {
     let tabsHtml = '';
     if (state.activeTab === 'ABODE') {
@@ -5131,6 +5238,9 @@
             '</button>' +
           '</div>' +
           '<div class="header-actions">' +
+            '<button class="btn btn-sm" style="background:rgba(14,165,233,0.18);border-color:rgba(56,189,248,0.55);color:#7dd3fc" data-action="open-dao-modal" data-tooltip-title="' + escapeHtml(t('daoAltarTooltipTitle')) + '" data-tooltip="' + escapeHtml(t('daoAltarTooltipBody')) + '">' +
+              t('daoAltarBtn') +
+            '</button>' +
             '<button class="btn btn-sm" data-action="toggle-sound" data-tooltip-title="' + escapeHtml(t('soundTooltipTitle')) + '" data-tooltip="' + escapeHtml(t('soundTooltipBody')) + '">' +
               (state.soundMuted ? t('soundOffBtn') : t('soundOnBtn')) +
             '</button>' +
@@ -5148,6 +5258,7 @@
         renderDiscipleCardModal() +
         renderBreakthroughModal() +
         renderSettingsModal() +
+        renderDaoScaleModal() +
         '<nav class="bottom-nav" aria-label="' + escapeHtml(t('bottomNavAria')) + '">' +
           '<button class="bottom-nav-btn ' +
             (state.activeTab === 'ABODE' ? 'active' : '') +
@@ -5455,6 +5566,15 @@
       renderApp();
       return;
     }
+    if (
+      e.target &&
+      e.target.getAttribute &&
+      e.target.getAttribute('data-backdrop') === 'dao-modal'
+    ) {
+      state.daoModalOpen = false;
+      renderApp();
+      return;
+    }
 
     const target = e.target.closest('[data-action]');
     if (!target || target.disabled) return;
@@ -5463,6 +5583,50 @@
     if (action === 'set-tab') {
       state.activeTab = target.getAttribute('data-tab');
       renderApp();
+    } else if (action === 'open-dao-modal') {
+      state.daoModalOpen = true;
+      soundFX.playChime();
+      renderApp();
+    } else if (action === 'close-dao-modal') {
+      state.daoModalOpen = false;
+      renderApp();
+    } else if (action === 'set-banner-view') {
+      state.bannerViewMode = target.getAttribute('data-view') || 'DAO_SCALE';
+      soundFX.playClick();
+      renderApp();
+    } else if (action === 'dao-tilt') {
+      state.daoScaleTilt = Number(target.getAttribute('data-tilt')) || 0;
+      state.bannerViewMode = 'DAO_SCALE';
+      soundFX.playClick();
+      renderApp();
+    } else if (action === 'set-dao-shield-mode') {
+      state.daoShieldMode = target.getAttribute('data-mode') || 'HARMONY';
+      soundFX.playChime();
+      renderApp();
+    } else if (action === 'dao-pulse-qi') {
+      state.daoPulseActive = true;
+      state.bannerViewMode = 'DAO_SCALE';
+      soundFX.playChime();
+      // Импульс Щита Ци исцеляет отдыхающих учеников (+15 ОЗ) и восстанавливает их Щит Ци
+      state.disciples = state.disciples.map(function (d) {
+        if (d.status === 'EXPEDITION') return d;
+        var eff = math.calculateEffectiveStats(d);
+        var nextHp = Math.min(eff.maxHp, eff.hp + 15);
+        return Object.assign({}, d, {
+          qiShield: eff.maxQiShield,
+          maxQiShield: eff.maxQiShield,
+          stats: Object.assign({}, d.stats, {
+            hp: nextHp,
+            qiShield: eff.maxQiShield,
+            maxQiShield: eff.maxQiShield,
+          }),
+        });
+      });
+      renderApp();
+      setTimeout(function () {
+        state.daoPulseActive = false;
+        renderApp();
+      }, 650);
     } else if (action === 'set-abode-sub') {
       state.abodeSubTab = target.getAttribute('data-sub');
       renderApp();

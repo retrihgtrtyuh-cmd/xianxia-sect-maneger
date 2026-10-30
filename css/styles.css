@@ -781,3 +781,61 @@ h3,
   word-break: break-word;
 }
 
+/* ==========================================================================
+   16:9 PIXEL-ART АССЕТ «МИСТИЧЕСКИЕ ВЕСЫ ДАО И ЩИТ ДУХОВНОЙ ЦИ»
+   ========================================================================== */
+.dao-hero-showcase {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: linear-gradient(180deg, #0b101d 0%, #070a12 100%);
+  border: 1px solid #28364e;
+  border-radius: 12px;
+  padding: 8px 10px;
+  flex-shrink: 0;
+  box-shadow: 0 4px 18px rgba(2, 132, 199, 0.12), inset 0 0 0 1px rgba(245, 158, 11, 0.14);
+}
+
+.dao-hero-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.dao-hero-canvas {
+  position: relative;
+  width: 100%;
+  height: 175px;
+  border-radius: 9px;
+  overflow: hidden;
+  border: 1px solid #2b3b55;
+  background-color: #05070e;
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.dao-hero-canvas:hover {
+  border-color: #38bdf8;
+  box-shadow: 0 0 14px rgba(56, 189, 248, 0.28);
+}
+
+@media (min-height: 760px) {
+  .dao-hero-canvas {
+    height: 210px;
+  }
+}
+
+.dao-pixel-16x9-frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 2px solid #d97706;
+  background-color: #05070e;
+  box-shadow: 0 0 24px rgba(56, 189, 248, 0.24), inset 0 0 16px rgba(16, 185, 129, 0.18);
+}
+
+
