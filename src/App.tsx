@@ -66,7 +66,12 @@ import {
   syncDiscipleHp,
   TEMPERAMENT_INFO,
 } from './engine/gameMath';
-import { KarstRiftIllustration, SectAbodeIllustration } from './components/XianxiaArt';
+import {
+  KarstRiftIllustration,
+  SectAbodeIllustration,
+  DaoBalanceScaleArt,
+  DaoBalanceScaleBanner,
+} from './components/XianxiaArt';
 import {
   Tooltip,
   formatArchetypeBonusText,
@@ -164,6 +169,8 @@ export default function App() {
   const [chronicleFilter, setChronicleFilter] = useState<'ALL' | ChronicleCategory>('ALL');
   const [lang, setLangState] = useState<LanguageCode>(() => getLang());
   const [settingsModalOpen, setSettingsModalOpen] = useState<boolean>(false);
+  const [daoArtModalOpen, setDaoArtModalOpen] = useState<boolean>(false);
+  const [abodeBannerView, setAbodeBannerView] = useState<'DAO_SCALE' | 'ABODE'>('DAO_SCALE');
 
   const handleLanguageChange = (nextLang: LanguageCode) => {
     const applied = setLang(nextLang);
@@ -1449,6 +1456,15 @@ export default function App() {
         {/* Зона 3: Сервисные действия и Настройки языка */}
         <div className="flex items-center gap-1.5 shrink-0">
           <button
+            onClick={() => setDaoArtModalOpen(true)}
+            data-tooltip-title="Алтарь Дао и Щит Ци"
+            data-tooltip="Осмотреть 16:9 процедурный Pixel Art артефакт: Весы Равновесия Дао и сияющий защитный щит Ци"
+            className="px-2.5 py-1.5 text-xs text-cyan-300 bg-cyan-950/60 hover:bg-cyan-900/60 border border-cyan-500/40 rounded-lg transition-colors flex items-center gap-1.5 shadow-[0_0_10px_#0284c730]"
+          >
+            <span className="text-cyan-400 font-bold font-mono">☯</span>
+            <span className="hidden sm:inline font-medium">Алтарь Дао</span>
+          </button>
+          <button
             onClick={() => setSettingsModalOpen(true)}
             data-tooltip-title={t('settingsTooltipTitle')}
             data-tooltip={t('settingsTooltip')}
@@ -1682,7 +1698,44 @@ export default function App() {
             {/* Подраздел 1.1: Обитель и Чайный Павильон */}
             {abodeSubTab === 'SANCTUARY' && (
               <div className="flex-1 min-h-0 flex flex-col justify-between gap-2.5">
-                <SectAbodeIllustration level={sectLevel} />
+                <div className="flex flex-col gap-1 shrink-0">
+                  <div className="flex items-center justify-between text-[11px] text-[#94A3B8] px-1">
+                    <span className="font-mono text-cyan-400/90 flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
+                      АРТЕФАКТЫ И ФОРМАЦИЯ СЕКТЫ
+                    </span>
+                    <div className="flex items-center gap-1 bg-[#101622] p-0.5 rounded-lg border border-[#222E42]">
+                      <button
+                        type="button"
+                        onClick={() => setAbodeBannerView('DAO_SCALE')}
+                        className={`px-2 py-0.5 rounded text-[10px] font-mono transition-colors ${
+                          abodeBannerView === 'DAO_SCALE'
+                            ? 'bg-cyan-950 text-cyan-300 border border-cyan-500/50 font-bold'
+                            : 'text-slate-400 hover:text-white'
+                        }`}
+                      >
+                        ☯ Алтарь Дао
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setAbodeBannerView('ABODE')}
+                        className={`px-2 py-0.5 rounded text-[10px] font-mono transition-colors ${
+                          abodeBannerView === 'ABODE'
+                            ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold'
+                            : 'text-slate-400 hover:text-white'
+                        }`}
+                      >
+                        ⛰ Обитель
+                      </button>
+                    </div>
+                  </div>
+
+                  {abodeBannerView === 'DAO_SCALE' ? (
+                    <DaoBalanceScaleBanner onInspect={() => setDaoArtModalOpen(true)} />
+                  ) : (
+                    <SectAbodeIllustration level={sectLevel} />
+                  )}
+                </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 flex-1 min-h-0">
                   {/* Карточка возвышения Обители */}
@@ -3640,6 +3693,109 @@ export default function App() {
                 className="px-4 py-2 rounded-lg text-xs font-semibold bg-amber-500 text-[#0B0E14] hover:bg-amber-400"
               >
                 {t('closeBtn')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =====================================================================
+          МОДАЛЬНОЕ ОКНО: АЛТАРЬ РАВНОВЕСИЯ ДАО И ЩИТ ЦИ (16:9 PIXEL ART UI)
+      ====================================================================== */}
+      {daoArtModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/85 backdrop-blur-md animate-fadeIn">
+          <div className="bg-[#090D18] border border-[#27344E] rounded-2xl p-4 sm:p-5 max-w-4xl w-full max-h-[92vh] flex flex-col gap-3 shadow-2xl overflow-y-auto">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-[#1E293B] pb-2.5">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-cyan-400 shadow-[0_0_10px_#38BDF8]" />
+                <div>
+                  <h2 className="text-base sm:text-lg font-bold text-slate-100 flex items-center gap-2 font-display">
+                    <span>☯ Весы Равновесия Дао · Щит Духовной Ци</span>
+                    <span className="text-[10px] px-2 py-0.5 rounded bg-cyan-950 border border-cyan-500/50 text-cyan-300 font-mono">
+                      16:9 PIXEL ART
+                    </span>
+                  </h2>
+                  <p className="text-xs text-slate-400">
+                    Древний мистический артефакт секты санься: балансировка энергий Инь-Ян, нефрит, темное золото и защитный купол Ци.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setDaoArtModalOpen(false)}
+                className="p-1.5 rounded-lg bg-[#151D2C] hover:bg-[#202B40] text-slate-300 hover:text-white transition-colors text-xs font-mono"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* 16:9 Procedural Pixel Art Asset Canvas */}
+            <div className="w-full flex justify-center">
+              <div className="w-full max-w-3xl">
+                <DaoBalanceScaleArt
+                  interactive={true}
+                  showUiOverlay={true}
+                  onMeditate={() => {
+                    // Bless all disciples with minor healing
+                    setDisciples((prev) =>
+                      prev.map((d) => {
+                        const eff = calculateEffectiveStats(d);
+                        return {
+                          ...d,
+                          stats: {
+                            ...d.stats,
+                            hp: Math.min(eff.maxHp, d.stats.hp + 20),
+                          },
+                        };
+                      })
+                    );
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Lore & Instructions Bar */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1 text-xs text-slate-300">
+              <div className="p-2.5 rounded-xl bg-[#0F1524] border border-[#202C40]">
+                <div className="text-[11px] font-bold text-cyan-300 font-mono flex items-center gap-1.5">
+                  <span>☵ ИНЬ (Спокойствие / Вода)</span>
+                </div>
+                <div className="text-[10px] text-slate-400 mt-1 leading-relaxed">
+                  Питает Сердце Дао, снижает вероятность внутреннего демона при прорывах царств и охлаждает разум адептов.
+                </div>
+              </div>
+
+              <div className="p-2.5 rounded-xl bg-[#0F1524] border border-[#202C40]">
+                <div className="text-[11px] font-bold text-amber-300 font-mono flex items-center gap-1.5">
+                  <span>☲ ЯН (Ярость / Огонь)</span>
+                </div>
+                <div className="text-[10px] text-slate-400 mt-1 leading-relaxed">
+                  Усиливает мощь боевых искусств мечников и разрушительных заклинаний в Карстовом Разломе.
+                </div>
+              </div>
+
+              <div className="p-2.5 rounded-xl bg-[#0F1524] border border-[#202C40]">
+                <div className="text-[11px] font-bold text-emerald-300 font-mono flex items-center gap-1.5">
+                  <span>🛡 ЩИТ ЦИ (Формация)</span>
+                </div>
+                <div className="text-[10px] text-slate-400 mt-1 leading-relaxed">
+                  Нажмите на щит или кнопку «Пульс Ци», чтобы наполнить Обитель чистой духовной Ци и исцелить раненых учеников.
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom Actions */}
+            <div className="flex items-center justify-between border-t border-[#1E293B] pt-3">
+              <div className="text-[11px] text-slate-400 font-mono">
+                Стиль: Pixel Art · Dark Fantasy Xianxia · 16:9 SVG
+              </div>
+              <button
+                type="button"
+                onClick={() => setDaoArtModalOpen(false)}
+                className="px-4 py-1.5 rounded-lg text-xs font-semibold bg-cyan-600 hover:bg-cyan-500 text-white shadow-md transition-colors"
+              >
+                Вернуться в Обитель
               </button>
             </div>
           </div>
