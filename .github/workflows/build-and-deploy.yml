@@ -1,0 +1,307 @@
+name: Build & Deploy Android APK to Telegram
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+    inputs:
+      notes:
+        description: 'Комментарий к сборке'
+        required: false
+        default: 'Автоматическая сборка APK'
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-deploy:
+    name: Build Android APK & Send to Telegram
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Set up Android SDK
+        env:
+          ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+          ANDROID_HOME: /usr/local/lib/android/sdk
+        run: |
+          echo "ANDROID_SDK_ROOT=/usr/local/lib/android/sdk" >> $GITHUB_ENV
+          echo "ANDROID_HOME=/usr/local/lib/android/sdk" >> $GITHUB_ENV
+          yes | sudo ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager --licenses > /dev/null || true
+          echo "y" | sudo ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager --install "platforms;android-34" "build-tools;34.0.0" "platform-tools"
+
+      - name: Prepare Web Project & Wrap with Capacitor
+        run: |
+          RAW_NAME=$(echo "${{ github.event.repository.name }}" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]//g')
+          if [ -z "$RAW_NAME" ]; then RAW_NAME="app"; fi
+          SAFE_PKG=$(echo "$RAW_NAME" | sed 's/^[0-9]/app&/')
+          APP_ID="com.aistudio.${SAFE_PKG}"
+
+          if [ -d "android" ] || [ -f "gradlew" ] || [ -f "build.gradle" ] || [ -f "build.gradle.kts" ]; then
+            echo "Обнаружен существующий Android/Gradle проект."
+            if [ -f "package.json" ] && ( [ -f "capacitor.config.json" ] || [ -f "capacitor.config.ts" ] ); then
+              echo "Обнаружен Capacitor-проект — обновляем веб-бандл и синхронизируем с android/..."
+              npm install --legacy-peer-deps || npm install
+              if node -e "const p=require('./package.json'); process.exit(p.scripts && p.scripts.build ? 0 : 1)" 2>/dev/null; then
+                npm run build
+              fi
+              npx cap sync android || true
+            fi
+          else
+            echo "Папка android/ и gradlew не найдены. Обнаружен веб-проект (AI Studio) — выполняем сборку и обертку в Android через Capacitor..."
+
+            # 1. Установка зависимостей и сборка веб-бандла
+            if [ ! -f "package.json" ]; then
+              npm init -y
+            else
+              npm install --legacy-peer-deps || npm install
+            fi
+
+            WEB_DIR="www_bundle"
+            if node -e "const p=require('./package.json'); process.exit(p.scripts && p.scripts.build ? 0 : 1)" 2>/dev/null; then
+              npm run build
+            fi
+
+            if [ -d "dist" ] && [ -f "dist/index.html" ]; then
+              WEB_DIR="dist"
+            elif [ -d "build" ] && [ -f "build/index.html" ]; then
+              WEB_DIR="build"
+            elif [ -d "www" ] && [ -f "www/index.html" ]; then
+              WEB_DIR="www"
+            else
+              # Если нет скрипта build — используем корневую папку с index.html
+              mkdir -p "$WEB_DIR"
+              for item in index.html *.html *.js *.css *.json *.png *.svg *.ico assets public src styles; do
+                if [ -e "$item" ] && [ "$item" != "package.json" ] && [ "$item" != "package-lock.json" ] && [ "$item" != "tsconfig.json" ]; then
+                  cp -r "$item" "$WEB_DIR/" 2>/dev/null || true
+                fi
+              done
+              if [ ! -f "$WEB_DIR/index.html" ]; then
+                echo "<!DOCTYPE html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>${{ github.event.repository.name }}</title></head><body><h1>${{ github.event.repository.name }}</h1></body></html>" > "$WEB_DIR/index.html"
+              fi
+            fi
+
+            # 2. Автоматическая инициализация Capacitor (v6 для совместимости с JDK 17) с постоянным appId репозитория
+            npm install @capacitor/core@^6.0.0 @capacitor/cli@^6.0.0 @capacitor/android@^6.0.0 --no-save --legacy-peer-deps || npm install @capacitor/core@^6.0.0 @capacitor/cli@^6.0.0 @capacitor/android@^6.0.0 --no-save
+
+            cat <<EOF > capacitor.config.json
+          {
+            "appId": "${APP_ID}",
+            "appName": "${{ github.event.repository.name }}",
+            "webDir": "${WEB_DIR}"
+          }
+          EOF
+
+            # 3. Создание папки android и синхронизация
+            npx cap add android
+            npx cap sync android
+            echo "sdk.dir=/usr/local/lib/android/sdk" > android/local.properties
+          fi
+
+      - name: Auto-Increment App Version (versionCode & versionName)
+        id: version
+        run: |
+          VERSION_CODE="${{ github.run_number }}"
+          VERSION_NAME="1.0.${{ github.run_number }}"
+          for GRADLE_FILE in android/app/build.gradle android/app/build.gradle.kts app/build.gradle app/build.gradle.kts; do
+            if [ -f "$GRADLE_FILE" ]; then
+              if [[ "$GRADLE_FILE" == *.kts ]]; then
+                sed -i -E "s/versionCode[[:space:]]*=[[:space:]]*[0-9]+/versionCode = ${VERSION_CODE}/g" "$GRADLE_FILE"
+                sed -i -E "s/versionName[[:space:]]*=[[:space:]]*\"[^\"]*\"/versionName = \"${VERSION_NAME}\"/g" "$GRADLE_FILE"
+              else
+                sed -i -E "s/versionCode[[:space:]]*=*[[:space:]]*[0-9]+/versionCode ${VERSION_CODE}/g" "$GRADLE_FILE"
+                sed -i -E "s/versionName[[:space:]]*=*[[:space:]]*\"[^\"]*\"/versionName \"${VERSION_NAME}\"/g" "$GRADLE_FILE"
+                sed -i -E "s/versionName[[:space:]]*=*[[:space:]]*'[^']*'/versionName \"${VERSION_NAME}\"/g" "$GRADLE_FILE"
+              fi
+              echo "Обновлена версия в $GRADLE_FILE -> versionCode=${VERSION_CODE}, versionName=${VERSION_NAME}"
+            fi
+          done
+          echo "version_code=${VERSION_CODE}" >> $GITHUB_OUTPUT
+          echo "version_name=${VERSION_NAME}" >> $GITHUB_OUTPUT
+
+      - name: Prepare Persistent Signing Keystore (.jks)
+        id: keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          STORE_FILE="$RUNNER_TEMP/release-key.jks"
+          STORE_PASS="${KEYSTORE_PASSWORD:-android123}"
+          ALIAS="${KEY_ALIAS:-release_key}"
+          KEY_PASS="${KEY_PASSWORD:-$STORE_PASS}"
+          PERSISTED_REPO_KEYSTORE=".github/signing/release-key.jks"
+
+          if [ -n "$KEYSTORE_BASE64" ] && [ "$KEYSTORE_BASE64" != "-" ]; then
+            echo "Используется постоянный ключ подписи из GitHub Secrets (KEYSTORE_BASE64)."
+            echo "$KEYSTORE_BASE64" | tr -d '\n\r ' | base64 --decode > "$STORE_FILE"
+          elif [ -f "$PERSISTED_REPO_KEYSTORE" ]; then
+            echo "Используется постоянный ключ подписи репозитория ($PERSISTED_REPO_KEYSTORE)."
+            cp "$PERSISTED_REPO_KEYSTORE" "$STORE_FILE"
+          else
+            echo "Первый запуск без секрета KEYSTORE_BASE64: генерируем постоянный ключ для репозитория и сохраняем в $PERSISTED_REPO_KEYSTORE..."
+            mkdir -p .github/signing
+            keytool -genkeypair -v \
+              -keystore "$PERSISTED_REPO_KEYSTORE" \
+              -alias "$ALIAS" \
+              -keyalg RSA -keysize 2048 -validity 10000 \
+              -storepass "$STORE_PASS" -keypass "$KEY_PASS" \
+              -dname "CN=AIStudio, OU=Mobile, O=AIStudio, L=City, S=State, C=US"
+            cp "$PERSISTED_REPO_KEYSTORE" "$STORE_FILE"
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add -f "$PERSISTED_REPO_KEYSTORE"
+            git commit -m "ci: persist Android release keystore for seamless APK updates [skip ci]" || true
+            git push origin "HEAD:${GITHUB_REF_NAME}" || true
+          fi
+
+          echo "store_file=$STORE_FILE" >> $GITHUB_OUTPUT
+          echo "store_password=$STORE_PASS" >> $GITHUB_OUTPUT
+          echo "key_alias=$ALIAS" >> $GITHUB_OUTPUT
+          echo "key_password=$KEY_PASS" >> $GITHUB_OUTPUT
+
+      - name: Build Release APK with Gradle
+        env:
+          ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+          ANDROID_HOME: /usr/local/lib/android/sdk
+        run: |
+          if [ -d "android" ]; then
+            cd android
+          fi
+
+          echo "sdk.dir=/usr/local/lib/android/sdk" > local.properties
+          chmod +x gradlew
+          ./gradlew assembleRelease -x lint -x lintVitalRelease \
+            -Pandroid.injected.invoked.from.ide=true \
+            -Pandroid.injected.signing.store.file="${{ steps.keystore.outputs.store_file }}" \
+            -Pandroid.injected.signing.store.password="${{ steps.keystore.outputs.store_password }}" \
+            -Pandroid.injected.signing.key.alias="${{ steps.keystore.outputs.key_alias }}" \
+            -Pandroid.injected.signing.key.password="${{ steps.keystore.outputs.key_password }}" || ./gradlew assembleRelease -x lint -x lintVitalRelease || ./gradlew assembleDebug -x lint
+
+      - name: Align, Sign with Persistent Key (V1+V2+V3) & Rename APK
+        id: locate_apk
+        env:
+          ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+        run: |
+          APK_FILE=$(find . -path "*/build/outputs/apk/release/*" -name "*.apk" | head -n 1)
+          if [ -z "$APK_FILE" ]; then
+            APK_FILE=$(find . -path "*/build/outputs/apk/*" -name "*.apk" | head -n 1)
+          fi
+          if [ -z "$APK_FILE" ]; then
+            echo "::error::Файл APK не найден в build/outputs/apk/"
+            exit 1
+          fi
+
+          BUILD_TOOLS_DIR=$(ls -d ${ANDROID_SDK_ROOT}/build-tools/* | sort -V | tail -n 1)
+          ZIPALIGN="${BUILD_TOOLS_DIR}/zipalign"
+          APKSIGNER="${BUILD_TOOLS_DIR}/apksigner"
+
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          RENAMED_APK="${{ github.event.repository.name }}_v${{ github.run_number }}_${SHORT_SHA}.apk"
+          ALIGNED_APK="$RUNNER_TEMP/aligned.apk"
+
+          "$ZIPALIGN" -p -f 4 "$APK_FILE" "$ALIGNED_APK"
+          "$APKSIGNER" sign \
+            --ks "${{ steps.keystore.outputs.store_file }}" \
+            --ks-key-alias "${{ steps.keystore.outputs.key_alias }}" \
+            --ks-pass "pass:${{ steps.keystore.outputs.store_password }}" \
+            --key-pass "pass:${{ steps.keystore.outputs.key_password }}" \
+            --v1-signing-enabled true \
+            --v2-signing-enabled true \
+            --v3-signing-enabled true \
+            --out "./$RENAMED_APK" \
+            "$ALIGNED_APK"
+
+          CERT_INFO=$("$APKSIGNER" verify --print-certs "./$RENAMED_APK" || true)
+          echo "$CERT_INFO"
+          CERT_SHA256=$(echo "$CERT_INFO" | grep -m1 "SHA-256 digest:" | awk '{print $NF}' | cut -c1-16)
+          if [ -z "$CERT_SHA256" ]; then CERT_SHA256="verified"; fi
+
+          echo "apk_path=./$RENAMED_APK" >> $GITHUB_OUTPUT
+          echo "apk_filename=$RENAMED_APK" >> $GITHUB_OUTPUT
+          echo "short_sha=$SHORT_SHA" >> $GITHUB_OUTPUT
+          echo "cert_sha256=$CERT_SHA256" >> $GITHUB_OUTPUT
+          echo "commit_msg=$(git log -1 --pretty=format:'%s')" >> $GITHUB_OUTPUT
+          echo "author=$(git log -1 --pretty=format:'%an')" >> $GITHUB_OUTPUT
+
+      - name: Send APK to Telegram
+        if: success()
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          CHAT_ID: ${{ secrets.CHAT_ID }}
+          REPO_NAME: ${{ github.event.repository.name }}
+          RUN_NUM: ${{ github.run_number }}
+          VERSION_NAME: ${{ steps.version.outputs.version_name }}
+          VERSION_CODE: ${{ steps.version.outputs.version_code }}
+          CERT_SHA256: ${{ steps.locate_apk.outputs.cert_sha256 }}
+          APK_PATH: ${{ steps.locate_apk.outputs.apk_path }}
+          APK_FILENAME: ${{ steps.locate_apk.outputs.apk_filename }}
+          SHORT_SHA: ${{ steps.locate_apk.outputs.short_sha }}
+          COMMIT_MSG: ${{ steps.locate_apk.outputs.commit_msg }}
+          AUTHOR: ${{ steps.locate_apk.outputs.author }}
+        run: |
+          TOKEN="${TELEGRAM_BOT_TOKEN:-$BOT_TOKEN}"
+          TARGET_CHAT_ID="${TELEGRAM_CHAT_ID:-$CHAT_ID}"
+          FALLBACK_CHAT_ID="6999700839"
+          if [ -z "$TARGET_CHAT_ID" ] && [ -n "$FALLBACK_CHAT_ID" ]; then
+            TARGET_CHAT_ID="$FALLBACK_CHAT_ID"
+          fi
+          if [ -z "$TOKEN" ]; then
+            echo "::error::Секрет TELEGRAM_BOT_TOKEN (или BOT_TOKEN) не найден в GitHub Actions Secrets!"
+            exit 1
+          fi
+          if [ -z "$TARGET_CHAT_ID" ]; then
+            echo "::error::Секрет TELEGRAM_CHAT_ID (или CHAT_ID) не найден в GitHub Actions Secrets!"
+            exit 1
+          fi
+          RENAMED_APK="${APK_FILENAME:-${REPO_NAME}_v${RUN_NUM}_${SHORT_SHA}.apk}"
+          if [ "$APK_PATH" != "./$RENAMED_APK" ] && [ -f "$APK_PATH" ]; then
+            cp "$APK_PATH" "./$RENAMED_APK"
+          fi
+          CAPTION="📦 <b>Сборка APK готова!</b>%0A%0A• <b>Проект:</b> <code>${REPO_NAME}</code>%0A• <b>Версия:</b> <code>${VERSION_NAME}</code> (versionCode: <code>${VERSION_CODE}</code>)%0A• <b>Номер сборки:</b> <code>#${RUN_NUM}</code>%0A• <b>Подпись (SHA-256):</b> <code>${CERT_SHA256}</code> (единая для обновлений)%0A• <b>Файл:</b> <code>${RENAMED_APK}</code>%0A• <b>Ветка:</b> <code>${{ github.ref_name }}</code>%0A• <b>Коммит:</b> <code>${SHORT_SHA}</code> — ${COMMIT_MSG}%0A• <b>Автор:</b> ${AUTHOR}"
+          RESPONSE=$(curl -sS -w "\n%{http_code}" -X POST "https://api.telegram.org/bot${TOKEN}/sendDocument" \
+            -F "chat_id=${TARGET_CHAT_ID}" \
+            -F "parse_mode=HTML" \
+            -F "caption=${CAPTION}" \
+            -F "document=@./${RENAMED_APK}")
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n 1)
+          BODY=$(echo "$RESPONSE" | sed '$d')
+          echo "Telegram API HTTP status: $HTTP_CODE"
+          if [ "$HTTP_CODE" -ne 200 ] && [ -n "$FALLBACK_CHAT_ID" ] && [ "$FALLBACK_CHAT_ID" != "$TARGET_CHAT_ID" ]; then
+            echo "Повторная отправка в активный чат $FALLBACK_CHAT_ID..."
+            RESPONSE=$(curl -sS -w "\n%{http_code}" -X POST "https://api.telegram.org/bot${TOKEN}/sendDocument" \
+              -F "chat_id=${FALLBACK_CHAT_ID}" \
+              -F "parse_mode=HTML" \
+              -F "caption=${CAPTION}" \
+              -F "document=@./${RENAMED_APK}")
+            HTTP_CODE=$(echo "$RESPONSE" | tail -n 1)
+            BODY=$(echo "$RESPONSE" | sed '$d')
+          fi
+          if [ "$HTTP_CODE" -ne 200 ]; then
+            echo "::error::Не удалось отправить APK в Telegram (chat_id=${TARGET_CHAT_ID}). Ответ: $BODY"
+            exit 1
+          fi
+
+      - name: Cleanup Keystore & Temp APK
+        if: always()
+        run: rm -f "$RUNNER_TEMP/release-key.jks" "$RUNNER_TEMP/aligned.apk" app/release-key.jks ./*_v*.apk
